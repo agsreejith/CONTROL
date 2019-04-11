@@ -13,9 +13,9 @@ The steps involved in the program execution are as follows:
  7. Correct for dark: Correct of the effect of dark in science frames. 
  8. Correct for flat: Correct of the effect of flat in science frames. 
  9. Correct for cosmic rays: Correct for the effect of cosmic rays using LA cosmic algorithm. 
- 10.Extract spectrum: Define spectrum trace and extract the spectrum. 
- 11.Subtract Background: Subtract background from spectrum. 
- 12.Wavelength calibration: Do wavelength calibration 
+ 10. Extract spectrum: Define spectrum trace and extract the spectrum. 
+ 11. Subtract Background: Subtract background from spectrum. 
+ 12. Wavelength calibration: Do wavelength calibration 
  13.Flux calibration: Do flux calibration 
  14.Default Light curve: Create 3 light curves (short, middle and long wavelength) 
  15.Transmission spectrum: Retrie transmission spectrum.
