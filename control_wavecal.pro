@@ -20,49 +20,46 @@ if crosscor eq 1 then begin
   input_flux=in_image
   target=SXPAR( header, 'TARGNAME')
   sp_path=detectos(infile.stellar_params)
-  if file_test(sp_path) ne 1 then begin
     in_file=detectos(infile.model_file)
-    if file_test(in_file) ne 1 then begin
-      logprint,'CONTROL_WAVECAL: Input model file for corss corelation not found. Program will continue without cross corelation'
-      goto,withoutcorss
-    endif
-    flux=dblarr(2,file_lines(in_file))
-    readcol,in_file,flux[0,*],flux[1,*],F='D,D'
-  endif else begin
-    readcol,sp_path,star,temperature,radius,magnitude,F='A,D,D,D'
-    loc=where(star eq target)
-    in_file=detectos(infile.model_file)
-    t_star=temperature[loc]
-    V_mag=magnitude[loc]
-    r_star=radius[loc]
-    t_star=10000
-    V_mag= 2.36
-    r_star= 7.55
-    t=fix(t_star)
-    file=in_file+'\models\t'+string(t, Format='(I05)') +'g4.4\model.flx' ;assuming folder named by their temperature and file are named as model.flx
-    if file_test(file) ne 1 then t = t+100 ;above 8000K the steps is 200K
-    file=in_file+'\models\t'+string(t, Format='(I05)') +'g4.4\model.flx' ;test again to see if temperature is not in range or is in steps of 100 or 200
-    if file_test(file) ne 1 then message,'Error CONTROL_WAVECAL: Invalid input of stellar temperature in stellar temperature file, Please round the temperature to nearest 100'
-    length=file_lines(file)
-    fdata=dblarr(3,length)
-    openr,1,file
-    readf,1,fdata
-    close,1
-    ;definitions
-    flux1=dblarr(3,length)
-    r_star=double(r_star*R_sun)
-    flux=fdata
-    flux1[1,*]=(3d18*fdata[1,*])/(fdata[0,*]*fdata[0,*]) ;convert to ergs/cm2/s/A
-    flux1[2,*]=(3d18*fdata[2,*])/(fdata[0,*]*fdata[0,*]) ;convert to ergs/cm2/s/A
-    flux[1,*]=flux1[1,*]*4*!pi*(r_star^2)*4*!pi ;convert to ergs/s/A second 4*!pi for steradian conversion
-    flux[2,*]=flux1[2,*]*4*!pi*(r_star^2)*4*!pi  ;convert to ergs/s/A second 4*!pi for steradian conversion
-    t=double(t_star)
-    t4=0.0D
-    t4=t^4
-    r2=r_star^2
-    stepahs=5.6704d-5
-    L = stepahs*4*!pi*r2*t4
-  endelse  
+    if file_test(in_file) ne 1 then begin 
+      in_file=detectos(infile.model_file)
+      t_star=infile.temperature
+;      V_mag=infile.magnitude
+      r_star=infile.radius
+;      t_star=10000
+;      V_mag= 2.36
+;      r_star= 7.55
+      t=fix(t_star)
+      file=in_file+'\models\t'+string(t, Format='(I05)') +'g4.4\model.flx' ;assuming folder named by their temperature and file are named as model.flx
+      if file_test(file) ne 1 then t = t+100 ;above 8000K the steps is 200K
+      file=in_file+'\models\t'+string(t, Format='(I05)') +'g4.4\model.flx' ;test again to see if temperature is not in range or is in steps of 100 or 200
+      if file_test(file) ne 1 then begin 
+        logprint,'Error CONTROL_WAVECAL: Model file not found.check file location or stellar temperature'
+        goto,withoutcorss
+      endif  
+      length=file_lines(file)
+      fdata=dblarr(3,length)
+      openr,1,file
+      readf,1,fdata
+      close,1
+      ;definitions
+      flux1=dblarr(3,length)
+      r_star=double(r_star*R_sun)
+      flux=fdata
+      flux1[1,*]=(3d18*fdata[1,*])/(fdata[0,*]*fdata[0,*]) ;convert to ergs/cm2/s/A
+      flux1[2,*]=(3d18*fdata[2,*])/(fdata[0,*]*fdata[0,*]) ;convert to ergs/cm2/s/A
+      flux[1,*]=flux1[1,*]*4*!pi*(r_star^2)*4*!pi ;convert to ergs/s/A second 4*!pi for steradian conversion
+      flux[2,*]=flux1[2,*]*4*!pi*(r_star^2)*4*!pi  ;convert to ergs/s/A second 4*!pi for steradian conversion
+      t=double(t_star)
+      t4=0.0D
+      t4=t^4
+      r2=r_star^2
+      stepahs=5.6704d-5
+      L = stepahs*4*!pi*r2*t4
+    endif else begin
+      flux=dblarr(2,file_lines(in_file))
+      readcol,in_file,flux[0,*],flux[1,*],F='D,D'
+    endelse
 ;  file_eff='extra\eff_area.txt'
 ;  length=file_lines(file_eff)
 ;  eff_area=dblarr(5,length)
