@@ -68,9 +68,10 @@ flux2 = f_nd[mm2]
 nspr = 15
 deltaw = lam2[1] - lam2[0]
 
-mi   = n_elements(f_st)
-avg1 = total(f_st)/mi & ff= f_st - avg1   ; subtract average fluxes 
-avg2 = total(f_nd)/mi & fs= f_nd - avg2
+mi   = n_elements(flux1)
+mi2  = n_elements(flux2)
+avg1 = total(flux1)/mi & ff= flux1 - avg1   ; subtract average fluxes 
+avg2 = total(flux2)/mi & fs= flux2 - avg2
 ntot = nspr+nspr+1
 
 cross= fltarr(ntot)
@@ -130,7 +131,7 @@ endelse
 if keyword_set(plot) then begin
 
     print, ''
-    print, '  Resulting shift is: ',spc_str(delv)+' Angstroms'
+    ;print, '  Resulting shift is: ',spc_str(delv)+' Angstroms'
     print, ''
 
     lam3 = lam2 - delv

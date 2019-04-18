@@ -549,7 +549,7 @@ k=0
 
 if(tag_exist(infile,'centroid') eq 1) then begin
   cent_value=double(infile.centroid)
-  cent_value=cent_value+ycut1 
+  cent_value=cent_value-ycut1 
   centroid=make_array(nx,value=cent_value) 
   pixel=indgen(nx)
   y=indgen(ny)
