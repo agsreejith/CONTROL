@@ -8,11 +8,11 @@
 # 
 #************************************************************************************************************************
 #
-data_path  			= 'D:\simulator_output\kelt9\reduction\'
+data_path  			= 'D:\simulator_output\kelt9\sym\wave\data\'
 #temp_path 			= 
 #out_path  			= 
-steps 	   			= 'all'
-#hb_map	   			= 
+steps 	   			= 'extract,bg_sub,wcalib'
+hb_map	   			= 'D:\simulator_output\kelt9\reduction\extra\masker.fits'
 #master_bias_file 	=
 #master_dark_file 	=
 #master_flat_file 	=
@@ -27,7 +27,7 @@ sigma_deviation   	= 5
 trace_type			= 'simple'
 centroid			= 256.5	
 slope 				= -9.76e-4
-width 				= 5		
+width 				= 10		
 upper 				= 6		
 lower 				= 4		
 threshold			= 0.01	
@@ -36,9 +36,7 @@ wavecal_mode	 	= 'crscor'
 wavecal_file	 	= 'D:\simulator_output\kelt9\reduction\extra\wavelength.txt'
 stellar_params	 	= 'D:\simulator_output\kelt9\reduction\extra\stellar_params.txt'
 model_file		 	= 'D:\cutedrndl\'
-flux_calibration 	= 1
 flux_cal		 	= ''
-sci_out				= 1
 #
 #************************************************************************************************************************
 #COMMENTS
@@ -49,8 +47,23 @@ sci_out				= 1
 #		If data path is not provided it is assumed to be the current directory.
 #		If intermediate file path and output file path are not provided they are created in the data path.
 #02. The user has the option to select individual steps during reduction. The options are as follows
-#		'hb_correction,create_mbias,create_mdark,create_mflat,cr_bias,cr_dark,cr_flat,cr_cosmic,extract,bg_sub,wcalib,fluxcalib,light_curve,retrieval,level3'
-#		Use 'all' to execute all steps. This is also the default option if steps keyword is absent.
+#		hb_correction,create_mbias,create_mdark,create_mflat,cr_bias,cr_dark,cr_flat,cr_cosmic,extract,bg_sub,wcalib,fluxcalib,light_curve,retrieval,level3,all
+#		hb_correction: Hot and bad pixel correction
+#		create_mbias: Create master bias.
+#		create_mdark: Create master dark.
+#		create_mflat: Creatze master flat.
+#		cr_bias: Correct for bias in science frames.
+#		cr_dark:Correct for dark in science frames.
+#		cr_flat:Correct for flat in science frames.
+#		cr_cosmic: correct for cosmic rays in science frames.
+#		extract: Define the trace and extract the spectrum.
+#		bg_sub: subtract background from the spectrum.
+#		wcalib: Do wavelength calibration.
+#		fluxcalib: Do Flux calibration.
+#		light_curve: Create three light curves form the data.
+#		retrieval: Process the flux and wavelength calibrated spectra to obtain transmission spectra.
+#		level3: Carry out all process required for generating Level 3 data of CUTE, ie.,  flux and wavelength calibrated 1-D spectra. 
+#		all: Execute all the steps. This is also the default option if steps keyword is absent.
 #03. Location of hot and bad pixel map. The location of map of cosmetic defects on the CCD as a FITS file with the same sizes as the input CCD frame 
 #		byte-type pixels (8-bit) and values of 1B for good pixels and 0B for bad once. 
 #04. Location of master calibration files if available.
@@ -75,12 +88,13 @@ sci_out				= 1
 #09. Wavelength calibration variables
 #		Type of wavelength calibration required: Options are 'simple' and 'crscor'
 #		Location of wavelength file. A text file with length equal to number of pixels in cross dispersion direction representing wavelength to pixel mapping.
-#		A location of look up table for stellar parameters. Required only for the option crscor so as to compare with a model data.
-#		Location of synthetic spectrum (model_file) for cross-correlation. CONTROL assumes that folder are named by their temperature and file are named as model.flx
+#		A location of look up table for stellar parameters. Required only for the option crscor so as to compare with a model data. 
+#		If this look up table is not provided then the model file should be the a two column model file of wavelength vs flux.  
+#		Location of synthetic spectrum (model_file) for cross-correlation. CONTROL assumes that folder are named by their temperature and file are named as model.flx or
+#		a two column model file of wavelength vs flux, if stellar parameters look up table is not provided.  
 #10. Flux calibration variables
 #		Location of flux calibration file which provides wavelength vs response relation.
-#11. Science output: set this to 1 to generate the default light curves.
-#
+##
 #*************************************************************************************************************************************************************
 # The program works in a series of steps following standard CCD reduction techniques user can also select individual modules using the step function described above.
 # A reduction log is created to help users with processes carried out and mentioning the different parameters used if any.
