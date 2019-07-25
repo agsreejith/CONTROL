@@ -1,4 +1,14 @@
 # CONTROL
+ _______  _______  __    _  _______  ______    _______  ___
+|       ||       ||  |  | ||       ||    _ |  |       ||   |    
+|       ||   _   ||   |_| ||_     _||   | ||  |   _   ||   |    
+|       ||  | |  ||       |  |   |  |   |_||_ |  | |  ||   |    
+|      _||  |_|  ||  _    |  |   |  |    __  ||  |_|  ||   |___ 
+|     |_ |       || | |   |  |   |  |   |  | ||       ||       |
+|_______||_______||_|  |__|  |___|  |___|  |_||_______||_______|
+---------------------------------------------------------------
+    CONTROL v1.0: CUTE AUTONOMOUS DATA REDUCTION PIPELINE      
+---------------------------------------------------------------
  This software is intented to be fully automated, aimed at producing science-quality output with a single command line with zero user interference for CUTE data. It can be easily used for any single order spectral data in any wavelength without any modification. 
  
 The program works in a series of steps following standard CCD reduction techniques user can also select individual modules using the step function described above.
