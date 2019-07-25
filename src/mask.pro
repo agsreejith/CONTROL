@@ -1,3 +1,0 @@
-pro mask
-
-end
