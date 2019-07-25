@@ -27,5 +27,5 @@ The steps involved in the program execution are as follows:
  11. Subtract Background: Subtract background from spectrum. 
  12. Wavelength calibration: Do wavelength calibration. 
  13. Flux calibration: Do flux calibration.
- 14. Default Light curve: Create 3 light curves (short, middle and long wavelength). 
- 15. Transmission spectrum: Retrie transmission spectrum.
+ 14. Default Light curve: Create 7 light curves (full,short, middle,long wavelengths and three wavelength regions of choice). 
+
