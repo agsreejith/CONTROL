@@ -64,37 +64,74 @@ endif
   limit=0.001*totpix
   ;read in master bias
   if keyword_defined(mbias_str) then begin
-    if ISA(mbias_str) eq 0 then begin
-      logprint,'CONTROL_DARK_COMBINE: Requires a master bias file'
-      logprint,'CONTROL_DARK_COMBINE: Press any key except q to create a master bias frame with zeros or press q to quit.'
-      R = GET_KBRD()
-      if R eq 'q' then begin
-        logprint,'CONTROL_DARK_COMBINE: Exiting as requested by the user.',logonly = logonly
-        message,'CONTROL_DARK_COMBINE: Exiting as requested by the user.'
-        err = '%control_dark_combine: Insufficient number of parameters'
-        return
+    if (idl_ver ge 8) then begin
+      if ISA(mbias_str) eq 0 then begin
+        logprint,'CONTROL_DARK_COMBINE: Requires a master bias file'
+        logprint,'CONTROL_DARK_COMBINE: Press any key except q to create a master bias frame with zeros or press q to quit.'
+        R = GET_KBRD()
+        if R eq 'q' then begin
+          logprint,'CONTROL_DARK_COMBINE: Exiting as requested by the user.',logonly = logonly
+          message,'CONTROL_DARK_COMBINE: Exiting as requested by the user.'
+          err = '%control_dark_combine: Insufficient number of parameters'
+          return
+        endif else begin
+          logprint,'CONTROL_DARK_COMBINE: Creating a master bias with zero values.'
+          mbias=make_array(nxyd[1],nxyd[2],/DOUBLE,value=0.0)
+          mbias_flag = 0
+          r=12.25
+          mbdq=bytarr(nxyd[1],nxyd[2])
+        endelse  
       endif else begin
-        mbias=make_array(nxyd[1],nxyd[2],/DOUBLE,value=0.0)
-        mbias_flag = 0
-        r=12.25
-        mbdq=bytarr(nxyd[1],nxyd[2])
-      endelse  
-    endif else begin
-      mbias=mbias_str.im 
-      mbias_flag = SXPAR( mbias_str.hdr, 'MBIFLG') 
-      nxyb=size(mbias)
-      r=float(SXPAR( mbias_str.hdr, 'RNOISE'))
-      mbdq=mbias_str.dq
-      ;to be implemented later
-;     if nxyd[1] ne nxyb[1] then  
-;     ycut1=SXPAR( hdr, 'YCUT1')
-;     ycut2=SXPAR( hdr, 'YCUT2')
-;     ylen=ycut2-ycut1+1
-;     if (ylen ne ny) then begin
+        mbias=mbias_str.im 
+        mbias_flag = SXPAR( mbias_str.hdr, 'MBIFLG') 
+        nxyb=size(mbias)
+        r=float(SXPAR( mbias_str.hdr, 'RNOISE'))
+        mbdq=mbias_str.dq
+        ;to be implemented later
+;       if nxyd[1] ne nxyb[1] then  
+;       ycut1=SXPAR( hdr, 'YCUT1')
+;       ycut2=SXPAR( hdr, 'YCUT2')
+;       ylen=ycut2-ycut1+1
+;       if (ylen ne ny) then begin
 ;
-;      hbmap_nw=[*,ycut1:ycut1+ny-1]
+;        hbmap_nw=[*,ycut1:ycut1+ny-1]
+      endelse
+    endif else begin
+      mbas_def=datatype(mbias_str,2)
+      if mbas_def eq 0 then begin
+        logprint,'CONTROL_DARK_COMBINE: Requires a master bias file'
+        logprint,'CONTROL_DARK_COMBINE: Press any key except q to create a master bias frame with zeros or press q to quit.'
+        R = GET_KBRD()
+        if R eq 'q' then begin
+          logprint,'CONTROL_DARK_COMBINE: Exiting as requested by the user.',logonly = logonly
+          message,'CONTROL_DARK_COMBINE: Exiting as requested by the user.'
+          err = '%control_dark_combine: Insufficient number of parameters'
+          return
+        endif else begin
+          logprint,'CONTROL_DARK_COMBINE: Creating a master bias with zero values.'
+          mbias=make_array(nxyd[1],nxyd[2],/DOUBLE,value=0.0)
+          mbias_flag = 0
+          r=12.25
+          mbdq=bytarr(nxyd[1],nxyd[2])
+        endelse  
+      endif else begin
+        mbias=mbias_str.im 
+        mbias_flag = SXPAR( mbias_str.hdr, 'MBIFLG') 
+        nxyb=size(mbias)
+        r=float(SXPAR( mbias_str.hdr, 'RNOISE'))
+        mbdq=mbias_str.dq
+        ;to be implemented later
+;       if nxyd[1] ne nxyb[1] then  
+;       ycut1=SXPAR( hdr, 'YCUT1')
+;       ycut2=SXPAR( hdr, 'YCUT2')
+;       ylen=ycut2-ycut1+1
+;       if (ylen ne ny) then begin
+;
+;        hbmap_nw=[*,ycut1:ycut1+ny-1]
+      endelse
     endelse
   endif else begin
+    logprint,'CONTROL_DARK_COMBINE: Creating a master bias with zero values.'
     mbias=make_array(nxyd[1],nxyd[2],/DOUBLE,value=0.0)
     mbias_flag = 0
     r=12.25
@@ -189,22 +226,22 @@ endif
     dq_arr=dq_arr+mbdq
     prb=where(dq_arr ge 1)
     dark_dq=bytarr(nxyd[1],nxyd[2])
-    dark_dq[prb]=1
+    if total(prb) ne -1 then dark_dq[prb]=1
     ;checks
     ;saturated pixels
     
     sat_loc = where(mdark_val ge sat_value)
     if total(sat_loc) eq -1 then sat_flag = 0 else sat_flag = 1
-     dark_dq[sat_loc]=1
+    if total(sat_loc) ne -1 then dark_dq[sat_loc]=1
     ;deviation
     std=stddev(mdark_val)
     std_loc = where((mdark_val ge (mean(mdark_val)+threshold*std)) or (mdark_val le (mean(mdark_val)-threshold*std)))
     if total(std_loc) eq -1 then std_flag = 0 else std_flag = 1
-    dark_dq[std_loc]=1
+    if total(sat_loc) ne -1 then dark_dq[std_loc]=1
     
     nan_loc = where(finite(mdark_val, /NAN) eq 1)
     if total(nan_loc) eq -1 then nan_flag = 0 else nan_flag = 1
-    dark_dq[nan_loc]=1
+    if total(nan_loc) ne -1 then dark_dq[nan_loc]=1
 
     mdark_flag = sat_flag+std_flag+mbias_flag+nan_flag
 

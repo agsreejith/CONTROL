@@ -61,28 +61,56 @@ endif
   limit=0.001*totpix
   ;read in master bias
   if keyword_defined(mbias_str) then begin
-    if ISA(mbias_str) eq 0 then begin
-      logprint,'CONTROL_DARK_COMBINE: Requires a master bias file'
-      logprint,'CONTROL_DARK_COMBINE: Press any key other thasn q to create a master bias frame with zeros or press q to quit.'
-      R = GET_KBRD()
-      if R eq 'q' then begin
-        logprint,'CONTROL_DARK_COMBINE: Exiting as requested by the user.',logonly = logonly
-        message,'CONTROL_DARK_COMBINE: Exiting as requested by the user.'
-        err = '%control_dark_combine: Insufficient number of parameters'
-        return
+    if (idl_ver ge 8) then begin
+      if ISA(mbias_str) eq 0 then begin
+        logprint,'CONTROL_FLAT_COMBINE: Requires a master bias file'
+        logprint,'CONTROL_FLAT_COMBINE: Press any key other than q to create a master bias frame with zeros or press q to quit.'
+        R = GET_KBRD()
+        if R eq 'q' then begin
+          logprint,'CONTROL_FLAT_COMBINE: Exiting as requested by the user.',logonly = logonly
+          message,'CONTROL_FLAT_COMBINE: Exiting as requested by the user.'
+          err = '%control_flat_combine: Insufficient number of parameters'
+          return
+        endif else begin
+          logprint,'CONTROL_FLAT_COMBINE: Creating a master bias with zero values.'
+          mbias=make_array(nxyd[1],nxyd[2],/DOUBLE,value=0.0)
+          mbias_flag = 0
+          r=12.25
+          mbdq=bytarr(nxyd[1],nxyd[2])
+        endelse
       endif else begin
-        mbias=make_array(nxyd[1],nxyd[2],/DOUBLE,value=0.0)
-        mbias_flag = 0
-        r=12.25
-        mbdq=bytarr(nxyd[1],nxyd[2])
-      endelse
+        mbias=mbias_str.im
+        mbias_flag = SXPAR( mbias_str.hdr, 'MBIFLG') 
+        r=float(SXPAR( mbias_str.hdr, 'RNOISE'))
+        mbdq=mbias_str.dq
+      endelse 
     endif else begin
-     mbias=mbias_str.im
-     mbias_flag = SXPAR( mbias_str.hdr, 'MBIFLG') 
-     r=float(SXPAR( mbias_str.hdr, 'RNOISE'))
-     mbdq=mbias_str.dq
-    endelse 
+      mbas_def=datatype(mbias_str,2)
+      if mbas_def eq 0 then begin
+        logprint,'CONTROL_FLAT_COMBINE: Requires a master bias file'
+        logprint,'CONTROL_FLAT_COMBINE: Press any key other thasn q to create a master bias frame with zeros or press q to quit.'
+        R = GET_KBRD()
+        if R eq 'q' then begin
+          logprint,'CONTROL_FLAT_COMBINE: Exiting as requested by the user.',logonly = logonly
+          message,'CONTROL_FLAT_COMBINE: Exiting as requested by the user.'
+          err = '%control_flat_combine: Insufficient number of parameters'
+          return
+        endif else begin
+          logprint,'CONTROL_FLAT_COMBINE: Creating a master bias with zero values.'
+          mbias=make_array(nxyd[1],nxyd[2],/DOUBLE,value=0.0)
+          mbias_flag = 0
+          r=12.25
+          mbdq=bytarr(nxyd[1],nxyd[2])
+        endelse
+      endif else begin
+        mbias=mbias_str.im
+        mbias_flag = SXPAR( mbias_str.hdr, 'MBIFLG') 
+        r=float(SXPAR( mbias_str.hdr, 'RNOISE'))
+        mbdq=mbias_str.dq
+      endelse 
+    endelse  
   endif else begin
+    logprint,'CONTROL_FLAT_COMBINE: Creating a master bias with zero values.'
     mbias=make_array(nxy[1],nxy[2],/DOUBLE,value=0.0)
     mbias_flag = 0
     r=12.25
@@ -90,30 +118,60 @@ endif
   endelse
   ;read in master dark
   if keyword_defined(mdark_str) then begin
-    if ISA(mdark_str) eq 0 then begin
-      logprint,'CONTROL_DARK_COMBINE: Requires a master dark file'
-      logprint,'CONTROL_DARK_COMBINE: Press any key other than q to create a master dark frame with zeros or press q to quit.'
-      R = GET_KBRD()
-      if R eq 'q' then begin
-        logprint,'CONTROL_DARK_COMBINE: Exiting as requested by the user.',logonly = logonly
-        message,'CONTROL_DARK_COMBINE: Exiting as requested by the user.'
-        err = '%control_dark_combine: Insufficient number of parameters'
-        return
+    if (idl_ver ge 8) then begin
+      if ISA(mdark_str) eq 0 then begin
+        logprint,'CONTROL_FLAT_COMBINE: Requires a master dark file'
+        logprint,'CONTROL_FLAT_COMBINE: Press any key other than q to create a master dark frame with zeros or press q to quit.'
+        R = GET_KBRD()
+        if R eq 'q' then begin
+          logprint,'CONTROL_FLAT_COMBINE: Exiting as requested by the user.',logonly = logonly
+          message,'CONTROL_FLAT_COMBINE: Exiting as requested by the user.'
+          err = '%control_flat_combine: Insufficient number of parameters'
+          return
+        endif else begin
+          logprint,'CONTROL_FLAT_COMBINE: Creating a master dark with zero values.'
+          mdark=make_array(nxy[1],nxy[2],/DOUBLE,value=0.0)
+          mdark_flag = 0
+          mdark_err=make_array(nxy[1],nxy[2],/DOUBLE,value=0.0)
+          mddq=bytarr(nxy[1],nxy[2])
+          exp_dark=300
+        endelse
       endif else begin
-        mdark=make_array(nxy[1],nxy[2],/DOUBLE,value=0.0)
-        mdark_flag = 0
-        mdark_err=make_array(nxy[1],nxy[2],/DOUBLE,value=0.0)
-        mddq=bytarr(nxy[1],nxy[2])
-        exp_dark=300
+        mdark=mdark_str.im
+        mdark_flag = SXPAR( mdark_str.hdr, 'MDRFLG')
+        mdark_err= mdark_str.error
+        exp_dark=sxpar(mdark_str.hdr,'exptime')
+        mddq=mdark_str.dq
       endelse
     endif else begin
-      mdark=mdark_str.im
-      mdark_flag = SXPAR( mdark_str.hdr, 'MDRFLG')
-      mdark_err= mdark_str.error
-      exp_dark=sxpar(mdark_str.hdr,'exptime')
-      mddq=mdark_str.dq
-    endelse
+      mbas_def=datatype(mdark_str,2)
+      if mbas_def eq 0 then begin
+        logprint,'CONTROL_FLAT_COMBINE: Requires a master dark file'
+        logprint,'CONTROL_FLAT_COMBINE: Press any key other than q to create a master dark frame with zeros or press q to quit.'
+        R = GET_KBRD()
+        if R eq 'q' then begin
+          logprint,'CONTROL_FLAT_COMBINE: Exiting as requested by the user.',logonly = logonly
+          message,'CONTROL_FLAT_COMBINE: Exiting as requested by the user.'
+          err = '%control_flat_combine: Insufficient number of parameters'
+          return
+        endif else begin
+          logprint,'CONTROL_FLAT_COMBINE: Creating a master dark with zero values.'
+          mdark=make_array(nxy[1],nxy[2],/DOUBLE,value=0.0)
+          mdark_flag = 0
+          mdark_err=make_array(nxy[1],nxy[2],/DOUBLE,value=0.0)
+          mddq=bytarr(nxy[1],nxy[2])
+          exp_dark=300
+        endelse
+      endif else begin
+        mdark=mdark_str.im
+        mdark_flag = SXPAR( mdark_str.hdr, 'MDRFLG')
+        mdark_err= mdark_str.error
+        exp_dark=sxpar(mdark_str.hdr,'exptime')
+        mddq=mdark_str.dq
+      endelse
+    endelse  
   endif else begin
+    logprint,'CONTROL_FLAT_COMBINE: Creating a master dark with zero values.'
     mdark=make_array(nxy[1],nxy[2],/DOUBLE,value=0.0)
     mdark_flag = 0
     mdark_err=make_array(nxy[1],nxy[2],/DOUBLE,value=0.0)
@@ -152,19 +210,19 @@ endif
     flat_arr=flat_ar(*,*,incl)
     flat_err=flat_er(*,*,incl)
     if n_frames eq 0 then begin
-      logprint,'CONTROL FLAT COMBINE: No valid FLAT file found. Terminating MASTER FLAT creation.'
+      logprint,'CONTROL_FLAT_COMBINE: No valid FLAT file found. Terminating MASTER FLAT creation.'
       return
     endif
     if n_frames le 1 then begin
-      logprint,'CONTROL FLAT COMBINE: Only one valid FLAT file found. Do you wnat to assume it as the MASTER FLAT?.'
+      logprint,'CONTROL_FLAT_COMBINE: Only one valid FLAT file found. Do you wnat to assume it as the MASTER FLAT?.'
       logprint,'Press q to skip this assumption. Press any key to continue with MASTER FLAT creation with one valid FLAT file.'
       R = GET_KBRD()
       if R eq 'q' then begin
-        logprint,'CONTROL FLAT COMBINE: Terminating MASTER FLAT creation as requested by the user.'
+        logprint,'CONTROL_FLAT_COMBINE: Terminating MASTER FLAT creation as requested by the user.'
         return
       endif
     endif
-    logprint,'CONTROL FLAT COMBINE: Combining '+STRTRIM(STRING(n_frames),2)+' FLAT file to create MASTER FLAT using '+type+' method .'
+    logprint,'CONTROL_FLAT_COMBINE: Combining '+STRTRIM(STRING(n_frames),2)+' FLAT file to create MASTER FLAT using '+type+' method .'
     
     case type of
       'median': begin
@@ -224,22 +282,22 @@ endif
    dq_arr=dq_arr+mbdq+mddq
    prb=where(dq_arr ge 1)
    flat_dq=bytarr(nxy[1],nxy[2])
-   flat_dq[prb]=1
+   if total(prb) ne -1 then flat_dq[prb]=1
    ;checks
    ;saturated pixels
    
    sat_loc = where(mflat_val ge sat_value)
    if total(sat_loc) ne -1 then sat_flag = 0 else sat_flag = 1
-   flat_dq[sat_loc]=1
+   if total(sat_loc) ne -1 then flat_dq[sat_loc]=1
    ;deviation
    std=stddev(mflat_val)
    std_loc = where((mflat_val ge (mean(mflat_val)+threshold*std)) or (mflat_val le (mean(mflat_val)-threshold*std)))
    if total(std_loc) ne -1 then std_flag = 0 else std_flag = 1
    npix_stdloc=n_elements(std_loc)
-   flat_dq[std_loc]=1
+   if total(std_loc) ne -1 then flat_dq[std_loc]=1
    nan_loc = where(finite(mflat_val, /NAN) eq 1)
    if total(nan_loc) eq -1 then nan_flag = 0 else nan_flag = 1
-   flat_dq[nan_loc]=1
+   if total(nan_loc) ne -1 then flat_dq[nan_loc]=1
 
    mflat_flag = sat_flag+std_flag+mbias_flag+nan_flag+mdark_flag
 

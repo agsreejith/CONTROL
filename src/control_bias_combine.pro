@@ -148,20 +148,20 @@ endif
     ;data quality
     prb=where(dq_arr ge 1)
     bias_dq=bytarr(nx,ny)
-    bias_dq[prb]=1
+    if total(prb) ne -1 then bias_dq[prb]=1
     ;saturated pixels
     sat_loc = where(mbias_val ge sat_value)
     if total(sat_loc) eq -1 then sat_flag = 0 else sat_flag = 1
-    bias_dq[sat_loc]=1
+    if total(sat_loc) ne -1 then bias_dq[sat_loc]=1
     ;deviation 
     std=stddev(mbias_val)
     std_loc = where((mbias_val ge (mean(mbias_val)+threshold*std)) or (mbias_val le (mean(mbias_val)-threshold*std)))
     if total(std_loc) eq -1 then std_flag = 0 else std_flag = 1
-        bias_dq[std_loc]=1
+    if total(sat_loc) ne -1 then bias_dq[std_loc]=1
 
      nan_loc = where(finite(mbias_val, /NAN) eq 1)
      if total(nan_loc) eq -1 then nan_flag = 0 else nan_flag = 1
-     bias_dq[nan_loc]=1
+     if total(nan_loc) ne -1 then bias_dq[nan_loc]=1
 
      mbias_flag = sat_flag+std_flag+nan_flag
     if mbias_flag gt 1 then mdark_flag=1
