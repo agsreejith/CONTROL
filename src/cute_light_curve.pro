@@ -1,7 +1,7 @@
 
 
 pro cute_light_curve,file_list,lightcurve,wave_region=wave_region
-
+  idl_ver=float(!Version.RELEASE)
   file=file_search(file_list)
   if (n_elements(file) eq 0) then begin
     logprint,'The file list is empty. Please check your input',logonly=logonly
@@ -39,7 +39,12 @@ pro cute_light_curve,file_list,lightcurve,wave_region=wave_region
     st=0
     en=nx-1
     n_w=en-st+1
-    x=make_array(n_w, /INDEX, /NOZERO, START=st)
+    if (idl_ver gt 8.2) then x=make_array(n_w, /INDEX, /NOZERO, START=st) else begin
+      x=make_array(n_w)
+      for ik=0, n_w-1 do begin
+        x[ik]=st+ik
+      endfor
+    endelse
     y=spectra_1dwf[st:en]
     dy=error_1dwf[st:en]
     tp=trapz_error(x,y,dy)
@@ -49,7 +54,12 @@ pro cute_light_curve,file_list,lightcurve,wave_region=wave_region
     st=0
     en=lenby3-1
     n_w=en-st+1
-    x=make_array(n_w, /INDEX, /NOZERO, START=st)
+    if (idl_ver gt 8.2) then x=make_array(n_w, /INDEX, /NOZERO, START=st) else begin
+      x=make_array(n_w)
+      for ik=0, n_w-1 do begin
+        x[ik]=st+ik
+      endfor
+    endelse
     y=spectra_1dwf[st:en]
     dy=error_1dwf[st:en]
     tp=trapz_error(x,y,dy)
@@ -58,7 +68,12 @@ pro cute_light_curve,file_list,lightcurve,wave_region=wave_region
     st=lenby3
     en=2*lenby3-1
     n_w=en-st+1
-    x=make_array(n_w, /INDEX, /NOZERO, START=st)
+    if (idl_ver gt 8.2) then x=make_array(n_w, /INDEX, /NOZERO, START=st) else begin
+      x=make_array(n_w)
+      for ik=0, n_w-1 do begin
+        x[ik]=st+ik
+      endfor
+    endelse
     y=spectra_1dwf[st:en]
     dy=error_1dwf[st:en]
     tp=trapz_error(x,y,dy)
@@ -67,7 +82,12 @@ pro cute_light_curve,file_list,lightcurve,wave_region=wave_region
     st=2*lenby3
     en=nx-1
     n_w=en-st+1
-    x=make_array(n_w, /INDEX, /NOZERO, START=st)
+    if (idl_ver gt 8.2) then x=make_array(n_w, /INDEX, /NOZERO, START=st) else begin
+      x=make_array(n_w)
+      for ik=0, n_w-1 do begin
+        x[ik]=st+ik
+      endfor
+    endelse
     y=spectra_1dwf[st:en]
     dy=error_1dwf[st:en]
     tp=trapz_error(x,y,dy)
@@ -82,7 +102,12 @@ pro cute_light_curve,file_list,lightcurve,wave_region=wave_region
       val=Min(Abs(wclf_spectrum_file.wave - 2793), st)
       val2=Min(Abs(wclf_spectrum_file.wave - 2805), en)
       n_w=en-st+1
-      x=make_array(n_w, /INDEX, /NOZERO, START=st)
+      if (idl_ver gt 8.2) then x=make_array(n_w, /INDEX, /NOZERO, START=st) else begin
+        x=make_array(n_w)
+        for ik=0, n_w-1 do begin
+          x[ik]=st+ik
+        endfor
+      endelse  
       y=spectra_1dwf[st:en]
       dy=error_1dwf[st:en]
       tp=trapz_error(x,y,dy)
@@ -96,7 +121,12 @@ pro cute_light_curve,file_list,lightcurve,wave_region=wave_region
       val=Min(Abs(wclf_spectrum_file.wave - 2850), st)
       val2=Min(Abs(wclf_spectrum_file.wave - 2854), en)
       n_w=en-st+1
-      x=make_array(n_w, /INDEX, /NOZERO, START=st)
+      if (idl_ver gt 8.2) then x=make_array(n_w, /INDEX, /NOZERO, START=st) else begin
+        x=make_array(n_w)
+        for ik=0, n_w-1 do begin
+          x[ik]=st+ik
+        endfor
+      endelse
       y=spectra_1dwf[st:en]
       dy=error_1dwf[st:en]
       tp=trapz_error(x,y,dy)
@@ -110,7 +140,12 @@ pro cute_light_curve,file_list,lightcurve,wave_region=wave_region
       val=Min(Abs(wclf_spectrum_file.wave - 2583), st)
       val2=Min(Abs(wclf_spectrum_file.wave - 2587), en)
       n_w=en-st+1
-      x=make_array(n_w, /INDEX, /NOZERO, START=st)
+      if (idl_ver gt 8.2) then x=make_array(n_w, /INDEX, /NOZERO, START=st) else begin
+        x=make_array(n_w)
+        for ik=0, n_w-1 do begin
+          x[ik]=st+ik
+        endfor
+      endelse
       y=spectra_1dwf[st:en]
       dy=error_1dwf[st:en]
       tp=trapz_error(x,y,dy)
