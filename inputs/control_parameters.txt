@@ -8,39 +8,38 @@
 # 
 #************************************************************************************************************************
 #
-data_path  			= 'C:\Users\shaas\error\input4\'
-temp_path 			= 'C:\Users\shaas\error\output68\'
-out_path  			= 'C:\Users\shaas\error\output68\'
-steps 	   			= 'create_mbias,create_mdark,create_mflat,cr_bias,cr_dark,cr_flat,cr_cosmic,extract,bg_sub,wcalib'
-hb_map	   			= 'C:\Users\shaas\light_curve\mask.fits'
-#master_bias_file 	= 
-#master_dark_file 	= 
-#master_flat_file 	= 
-save_temp_files	  	= 1	
-hbpix_corection_type    = interpolate
-bias_combine_type 	= median
-dark_combine_type 	= median
-flat_combine_type 	= median
-saturation_limit	= 72000
-sigma_deviation   	= 5
-cosmic_ray_clip  	= 8
-cosmic_before_dark 	= 0
-#cent_poly_degree 	=
-trace_type			= 'simple'
-centroid			= 256.5	
-slope 				= -9.76e-4
-width 				= 10		
-upper 				= 6		
-lower 				= 4		
-threshold			= 0.01	
-background_trace 	= '30'
-wavecal_mode	 	= 'crscor'
-wavecal_file	 	= ''
-#C:\Users\shaas\extra\wavelength.txt
-temperature			= 10000
-radius				= 2.36
-model_file		 	= 'C:\Users\shaas\models\t10000g4.4\model.flx'
-flux_cal			= 'C:\Users\shaas\pipeline\extra\flux_calib.txt'
+data_path  			      = ''
+temp_path 			      = ''
+out_path  			      = ''
+steps 	   			      = 'all'
+hb_map	   			      = ''
+#master_bias_file 	  = 
+#master_dark_file 	  = 
+#master_flat_file 	  = 
+save_temp_files	  	  = 1	
+hbpix_corection_type  = interpolate
+bias_combine_type 	  = median
+dark_combine_type 	  = median
+flat_combine_type 	  = median
+saturation_limit	    = 72000
+sigma_deviation   	  = 5
+cosmic_ray_clip  	    = 8
+cosmic_before_dark 	  = 0
+#cent_poly_degree 	  = 1
+trace_type			      = 'simple'
+centroid			        = 256.5	
+slope 				        = -9.76e-4
+width 				        = 10		
+upper 				        = 6		
+lower 				        = 4		
+threshold			        = 0.01	
+background_trace 	    = '30'
+wavecal_mode	 	      = 'crscor'
+wavecal_file	 	      = ''
+temperature			      = 10000
+radius				        = 2.36
+model_file		 	      = ''
+flux_cal			        = ''
 #
 #************************************************************************************************************************
 #COMMENTS
