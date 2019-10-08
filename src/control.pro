@@ -203,6 +203,7 @@ if where(steps eq 'all') eq -1 then begin
   if where(steps eq 'level3') ne -1 then cr_s=0
 endif
 
+idl_ver=float(!Version.RELEASE)
 ;reading parameters
 if(tag_exist(infile,'data_path') eq 1) then data_path=infile.data_path
 if(tag_exist(infile,'temp_path') eq 1) then inter_path=infile.temp_path
@@ -285,7 +286,7 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
           'UNIX': data_path=data_path+'/'; UNIX. 
         ENDCASE  
   endif else data_path=detectos(data_path)
-
+  
   if n_elements(inter_path) eq 0 then begin
     CASE StrUpCase(!Version.OS_Family) OF
           'WINDOWS': inter_path=data_path+'temp\' ;WINDOWS
@@ -293,7 +294,7 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
         ENDCASE 
     errorlog,'CONTROL: No temporary file path found. Temporary file directory created in data directory'
   endif else inter_path=detectos(inter_path)
-
+  
   
   if n_elements(out_path) eq 0 then begin
         CASE StrUpCase(!Version.OS_Family) OF
@@ -320,6 +321,7 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
     logprint,'Allowed values for save temporary files are 1 or 0. For any other values default of 1 will be assumed.'
     save_temp_files=1
   endif  
+  
   all_file_list=file_search(data_path+'*.fits') ;Get file list
   ;unique files?
   if (n_elements(all_file_list) eq 0) then begin
@@ -662,7 +664,7 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
       mwrfits,sigma_imb,inter_path+spectra_name[i]+'_b.fits',hdr
       ;data quality
       prb=where(dq_imb ge 1)
-      dq_imb[prb]=1
+      if total(prb) ne -1 then dq_imb[prb]=1
       undefine,prb
       mwrfits,dq_imb,inter_path+spectra_name[i]+'_b.fits',hdr
     endfor
@@ -699,7 +701,7 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
         cr_loc=where(cc_mask eq 1)
         dq_imbc[cr_loc]=1
         prb=where(dq_imbc ge 1)
-        dq_imbc[prb]=1
+        if total(prb) ne -1 then dq_imbc[prb]=1
         undefine,prb
         mwrfits,sigma_imbc,rawbc_list[i],hdr
         mwrfits,dq_imbc,rawbc_list[i],hdr
@@ -807,7 +809,7 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcd.fits',sigma_imbd,hdr1, /APPEND
       ;data quality
       prb=where(dq_imbd ge 1)
-      dq_imbd[prb]=1
+      if total(prb) ne -1 then dq_imbd[prb]=1
       undefine,prb
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcd.fits',dq_imbd,hdr2, /APPEND
       logprint,'CONTROL: Dark correction carried out on spectrum('+spectra_name[i]+').'
@@ -833,7 +835,7 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
         cr_loc=where(cc_mask eq 1)
         dq_imbd[cr_loc]=1
         prb=where(dq_imbd ge 1)
-        dq_imbd[prb]=1
+        if total(prb) ne -1 then dq_imbd[prb]=1
         undefine,prb
         if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdc.fits',sigma_imbd,hdr1, /APPEND
         if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdc.fits',dq_imbd,hdr2, /APPEND
@@ -884,7 +886,7 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdf.fits',raw_imbdf,hdr
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdf.fits',sigma_imbdf,hdr1, /APPEND    
       prb=where(dq_imbdf ge 1)
-      dq_imbdf[prb]=1
+      if total(prb) ne -1 then dq_imbdf[prb]=1
       undefine,prb
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdf.fits',dq_imbdf,hdr2, /APPEND    
       logprint,'CONTROL: Flat correction carried out on spectrum('+rawbc_list[i]+').' 
@@ -927,10 +929,17 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
         logprint,'CONTROL: Type input for trace not defined using default: simple'
       endelse
       spectrum=control_trace(in_image,infile,t_type,spectra_name[i])
-      if isa(spectrum,'STRUCT') eq 0 then begin
-        errorlog,'CONTROL: CONTROL_TRACE returned without extracted spectrum('+spectra_name[i]+'). Skipping further pipeline procedures for the corresponding file.'
-        goto,spectrum_loop_end
-      endif  
+      if (idl_ver ge 8) then begin
+        if isa(spectrum,'STRUCT') eq 0 then begin
+          errorlog,'CONTROL: CONTROL_TRACE returned without extracted spectrum('+spectra_name[i]+'). Skipping further pipeline procedures for the corresponding file.'
+          goto,spectrum_loop_end
+        endif  
+      endif else begin
+        if datatype(spectrum,2) ne 8 then begin
+          errorlog,'CONTROL: CONTROL_TRACE returned without extracted spectrum('+spectra_name[i]+'). Skipping further pipeline procedures for the corresponding file.'
+          goto,spectrum_loop_end
+        endif  
+      endelse
       ext_spectrum=spectrum.data
       hdr=spectrum.header
       hdr_nw=update_header(hdr)
@@ -1008,10 +1017,17 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
 ;    endelse  
     if (bgs) then begin
       logprint,'CONTROL will carryout background substraction on extracted spectrum now'
-      if isa(spectrum,'STRUCT') eq 0 then begin 
-        logprint,'Seems like extracted spectra were not avaliable assuming the extracted spectra to be in the data folder files.'
-        spectrum=mrdfits(rawbc_list[i],1,hdr_nw,/SILENT)
-      endif
+      if (idl_ver ge 8) then begin
+        if isa(spectrum,'STRUCT') eq 0 then begin 
+          logprint,'Seems like extracted spectra were not avaliable assuming the extracted spectra to be in the data folder files.'
+          spectrum=mrdfits(rawbc_list[i],1,hdr_nw,/SILENT)
+        endif
+      endif else begin
+        if datatype(spectrum,2) ne 8 then begin
+          logprint,'Seems like extracted spectra were not avaliable assuming the extracted spectra to be in the data folder files.'
+          spectrum=mrdfits(rawbc_list[i],1,hdr_nw,/SILENT)        
+        endif
+      endelse  
       im_bflg=fix(SXPAR(hdr_nw, 'BCFLG',MISSING=-1))
       im_dflg=fix(SXPAR(hdr_nw, 'DCFLG',MISSING=-1))
       im_fflg=fix(SXPAR(hdr_nw, 'FCFLG',MISSING=-1))
@@ -1070,7 +1086,7 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
       ;data quality
       dq_1d=spectrum.dq+spectrum.dq_bg
       prb=where(dq_1d ge 1)
-      dq_1d(prb)=1
+      if total(prb) ne -1 then dq_1d(prb)=1
       undefine,prb
       if (size(dq_1d))[0] ne 1 then begin
         logprint,'CONTROL: Data quality array is not one diamensional. Pipeline procedures for this file are aborted'
@@ -1184,7 +1200,11 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
     ;wavelength calibration
     if (wcl) then begin
       logprint,'CONTROL will wavelength calibrate the 1D science spectrum now'
-      if isa(spectrum_file,'STRUCT') eq 0 then spectrum_file=mrdfits(rawbc_list[i],1,hdr_1d,/SILENT)
+       if (idl_ver ge 8) then begin 
+          if isa(spectrum_file,'STRUCT') eq 0 then spectrum_file=mrdfits(rawbc_list[i],1,hdr_1d,/SILENT)
+      endif else begin
+        if datatype(spectrum,2) ne 8 then spectrum_file=mrdfits(rawbc_list[i],1,hdr_1d,/SILENT)
+      endelse  
       im_eflg=fix(SXPAR(hdr_1d, 'EXTFLF',MISSING=-1))
       im_bgflg=fix(SXPAR(hdr_1d, 'BGFLG',MISSING=-1))
        if (im_eflg eq -1 or im_bgflg eq -1) then begin
@@ -1273,7 +1293,11 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
       ;flux calibration
       if (fcl) then begin
         logprint,'CONTROL will flux calibrate the wavelength calibrated 1D science spectrum now'
-       if isa(wcl_spectrum_file,'STRUCT') eq 0 then wcl_spectrum_file=mrdfits(rawbc_list[i],1,hdr_1d,/SILENT)
+       if (idl_ver ge 8) then begin 
+          if isa(wcl_spectrum_file,'STRUCT') eq 0 then wcl_spectrum_file=mrdfits(rawbc_list[i],1,hdr_1d,/SILENT)
+       endif else begin
+          if datatype(spectrum,2) ne 8 then wcl_spectrum_file=mrdfits(rawbc_list[i],1,hdr_1d,/SILENT)
+       endelse
        if  fix(SXPAR(wl_hdr, 'WCALFLG',MISSING=-1)) eq -1 then begin
           logprint,'CONTROL: The FITS file specified('+rawbc_list[i]+') is not wavelength calibrated. Pipeline procedures for this file will be aborted'
          goto,spectrum_loop_end
