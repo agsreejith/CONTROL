@@ -563,6 +563,7 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
 end
 
 function control_trace,in_image,infile,trace_type,filename
+  idl_ver=float(!Version.RELEASE)
   if N_params() LT 4 then begin             ;Need at least 4 parameters
     print,'Syntax - control_trace,in_image,infile,trace_type,,filename
     err = '%CONTROL_TRACE: Insufficient number of parameters'
@@ -723,9 +724,13 @@ endif else begin
     lshift=fix(constl3*l_offset+lshift)
   endelse
 endelse  
-
-if typename(lshift) eq 'UNDEFINED' then lshift = 'undefined'
-if typename(ushift) eq 'UNDEFINED' then ushift = 'undefined'
+if (idl_ver ge 8) then begin
+  if typename(lshift) eq 'UNDEFINED' then lshift = 'undefined'
+  if typename(ushift) eq 'UNDEFINED' then ushift = 'undefined'
+endif else begin
+  if datatype(lshift,2) eq 0 then lshift = 'undefined'
+  if datatype(ushift,2) eq 0 then ushift = 'undefined'
+endelse
 back_trace={type:multiple,shift_upper:ushift,shift_lower:lshift}
 ;default extraction of box (similar to COS extraction)
 ;impliment slope change with extraction cut
