@@ -420,7 +420,28 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
     errorlog,'CONTROL: No SCIENCE files found.'
     ;message,'CONTROL: No DARK files found. CONTROL will exit now.'
   endelse
-  
+  ;calculate readout noise and gain 
+  if n_elements(biaslist) eq 0 then logprint,'CONTROL: Cannot calculate readnoise and gain without bias files. These values will be read from headers of master files' else begin
+     b1=mrdfits(biaslist[0],0,hdr,/SILENT)
+     b2=mrdfits(biaslist[1],0,hdr,/SILENT)   
+     if n_elements(flatlist) eq 0 then begin
+      logprint,'CONTROL: Cannot calculate gain without flat files. These values will be read from headers of master files'
+      if tag_exist(infile,'master_flat_file') eq 0 then logprint,'CONTROL: No master flat file found to read gain values reading them from bias files'
+      g_calc=SXPAR( hdr, 'CCDGAIN')
+     endif else begin
+       f1=mrdfits(flatlist[0],0,hdr,/SILENT)
+       f2=mrdfits(flatlist[1],0,hdr,/SILENT) 
+       g_calc=gain(f1,f2,b1,b2)
+       g_calc=1
+     endelse  
+     R=rnoise(b1,b2,g_calc)
+  endelse      
+  for i=0,n_elements(biaslist)-1 do begin
+    h = headfits(biaslist[i])
+    sxaddpar,h,'RNOISE',R
+    sxaddpar,h,'CCDGAIN',g_calc
+    modfits,biaslist[i],0,h
+  endfor
 
   ;bias section
   if (crmb) then begin
