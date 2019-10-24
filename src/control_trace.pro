@@ -808,7 +808,28 @@ ext_dq=extraction.dq
 ext_bg_dq=extraction.dq_bcg
 ;comparison to make sure extraction is proper, comparison with default 
 ;plt=plot(ext_data)
-
+;comparison of pixel vs extraction region
+sd=dblarr(52)
+fl=dblarr(52)
+pi=dblarr(52)
+j=0
+for i=1, 52 do begin
+  extractions = extract_box(im,error,dq,centroid,slope,i,back_trace)
+  flux=extractions.data
+  unc=extractions.error
+  continum_flux=flux[-150:-10]
+  continum_error=unc[-150:-10]
+  x=indgen(n_elements(continum_flux))
+  tp=trapz_error(x,continum_flux,continum_error)
+  sd[j]=stddev(continum_flux)
+  fl[j]=tp[0]
+  pi[j]=i
+  j++
+endfor
+cgplot,pi,sd,psym=16,Color='red7',xtitle='pixels from centroid',ytitle='Sigma of extracted spectrum', title='Flux and sigma variation with extraction window for spectrum in hotter continuum'
+cgAxis, YAxis=1, YRange=[double(min(fl))-100, double(max(fl))+10000],ytitle='Flux of extracted spectrum', /Save
+cgoplot,pi,fl,psym=16,Color='blue'
+write_png,inter_path+filename+'_pixel_vs_flux.png',TVRD(/TRUE)
 spectrum={data:ext_data,error:ext_error,header:hdr,background:ext_bck,bck_error:ext_bck_error,dq:ext_dq,dq_bg:ext_bg_dq} 
 return,spectrum  
 end
