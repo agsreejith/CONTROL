@@ -15,9 +15,16 @@ if tag_exist(infile,'wavecal_file') eq 0 then begin
 endif
 wave_path=detectos(infile.wavecal_file)
 if (file_test(wave_path) eq 0) then begin
-  logprint,'CONTROL: Wavelength file not found. Please re-run the pipeline with actual file address',logonly=logonly
-  message,'CONTROL: Wavelength file not found. Please re-run the pipeline with actual file address'
+  new_wave_file=detectos('calibration/wave_cal.txt')
+  if (file_test(new_wave_file) eq 0) then begin
+    logprint,'CONTROL: Wavelength file not found. Please re-run the pipeline with actual file address',logonly=logonly
+    message,'CONTROL: Wavelength file not found. Please re-run the pipeline with actual file address'
+  endif else begin
+    logprint,'CONTROL: Wavelength calibration file found in calibration folder.'
+    wave_path =detectos(new_wave_file)    
+  endelse
 endif
+ 
 readcol,wave_path,wavelength1,F='D'
 wave_cal_flg=0
 if crosscor eq 1 then begin

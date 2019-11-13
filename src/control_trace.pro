@@ -7,26 +7,26 @@ function extract_box,im,sigma,dq,centroid,slope,width,back_trace
   if N_params() LT 5 then begin             ;Need at least 4 parameters
     message,'Syntax - extract_box,im,sigma,slope,width,centroid
     err = '%extract_box: Insufficient number of parameters'
-    
+
   endif
   nxy=size(im)
   if nxy[0] ne 2 then begin
-    message,'Input file error, the image file is not 2-D' 
+    message,'Input file error, the image file is not 2-D'
     err = '%extract_box: Input file error'
-    
+
   endif
   nxy2=size(sigma)
   if nxy2[0] ne 2 then begin
     message,'Input file error, the error file is not 2-D'
     err = '%extract_box: Input file error'
-    
+
   endif
   nx=nxy[1]
   ny=nxy[2]
   multiple=back_trace.type
   if (datatype(back_trace.shift_upper) eq 'INT') then ushift=fix(back_trace.shift_upper)
   if (datatype(back_trace.shift_lower) eq 'INT') then lshift=fix(back_trace.shift_lower)
-  
+
   spectrum_val=dblarr(nx)
   noise=dblarr(nx)
   dq_val=bytarr(nx)
@@ -45,10 +45,10 @@ function extract_box,im,sigma,dq,centroid,slope,width,back_trace
     centroid=make_array(nx,value=loc)
   endelse
 
- if width le 0 then begin
-  logprint,'Width specified is less than or equal to zero. CONTROL will reset it to default value of 10.'
-  width =10
- endif
+  if width le 0 then begin
+    logprint,'Width specified is less than or equal to zero. CONTROL will reset it to default value of 10.'
+    width =10
+  endif
   stp= fix(centroid+slope*pixel+width)
   str=fix(centroid+slope*pixel-width)
   out_frame_up=where(stp gt ny-1)
@@ -104,7 +104,7 @@ function extract_box,im,sigma,dq,centroid,slope,width,back_trace
       background[j]=(back_u[j]+back_l[j])/bgscale
       backg_error[j]=(sqrt(noise_u[j]+noise_l[j])/bgscale^2)
     endelse
-    
+
   endfor
   error=sqrt(noise)
   prb=where(dq_val ge 1)
@@ -123,19 +123,19 @@ function extract_sum,im,sigma,dq,centroid,slope,upper,lower,back_trace
   if N_params() LT 5 then begin             ;Need at least 4 parameters
     message,'Syntax - extract_sum,im,sigma,centroid,upper,lower
     err = '%extract_sum: Insufficient number of parameters'
-    
+
   endif
   nxy=size(im)
   if nxy[0] ne 2 then begin
-    message,'Input file error, the image file is not 2-D' 
+    message,'Input file error, the image file is not 2-D'
     err = '%extract_sum: Input file error'
-    
+
   endif
   nxy2=size(sigma)
   if nxy2[0] ne 2 then begin
     print,'Input file error, the error file is not 2-D'
     err = '%extract_sum: Input file error'
-    
+
   endif
   nx=nxy[1]
   ny=nxy[2]
@@ -191,7 +191,7 @@ function extract_sum,im,sigma,dq,centroid,slope,upper,lower,back_trace
       endif else begin
         errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds',logonly=logonly
         message,' Background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds'
-      endelse  
+      endelse
       background[j]=(back_u[j]+back_l[j])/2
       backg_error[j]=(sqrt(noise_u[j]+noise_l[j])/4)
     endif else begin
@@ -209,7 +209,7 @@ function extract_sum,im,sigma,dq,centroid,slope,upper,lower,back_trace
         if ((centroid[j]-lshift[k]) ge 1) then begin
           back_u[j]=total(im[j,centroid[j]-lshift[k]:centroid[j]-lshift[k]+1], /NAN)
           noise_u[j]=total(sigma[j,centroid[j]-lshift[k]:centroid[j]-lshift[k]+1], /NAN)
-           dq_bval[j]+=total(dq[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
+          dq_bval[j]+=total(dq[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
         endif else begin
           errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds',logonly=logonly
           message,' Background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds'
@@ -240,21 +240,21 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
   if N_params() LT 4 then begin             ;Need at least 4 parameters
     message,'Syntax - extract_varsum,im,sigma,centroid,threshold
     err = '%extract_varsum: Insufficient number of parameters'
-    
+
   endif
   nxy=size(im)
   if nxy[0] ne 2 then begin
     message,'Input file error, the image file is not 2-D'
     err = '%extract_varsum: Input file error'
-    
+
   endif
   nxy2=size(sigma)
   if nxy2[0] ne 2 then begin
     message,'Input file error, the error file is not 2-D'
     err = '%extract_varsum: Input file error'
-    
+
   endif
- 
+
   nx=nxy[1]
   ny=nxy[2]
   multiple=back_trace.type
@@ -279,7 +279,7 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
   endif
   for j=1,nx-2 do begin ;valid for simulated data change to: j=0,nx-1 for actual data
     k=centroid[j]
-    while( im[j,k] ge threshold*im[j,centroid[j]]) do k++ 
+    while( im[j,k] ge threshold*im[j,centroid[j]]) do k++
     upper[j]=k
     k=centroid[j]
     while( im[j,k] ge threshold*im[j,centroid[j]]) do k--
@@ -303,8 +303,8 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
   lu_thresh=median(m_lower)+dev*stddev(m_lower)
   ll_thresh=median(m_lower)-dev*stddev(m_lower)
   pix=indgen(n_elements(m_upper))
-  
-  ;now to find outliers in the max values 
+
+  ;now to find outliers in the max values
   for j=0, n_elements(m_upper)-1 do begin
     if (ul_thresh ge m_upper[j] le uu_thresh) then begin
       if j ge 4 and j le n_elements(m_upper)-5 then  m_upper[j]= median(m_upper[j-4:j+4]) else if j lt 4 then m_upper[j]= median(m_upper[j:j+8]) else m_upper[j]= median(m_upper[j-8:j])
@@ -319,14 +319,14 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
   mn_lower=dblarr(n_elements(m_lower))
   fit=poly_fit(pix,m_upper,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma_fit,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
   for i=0,degree do mn_upper+=fit[i]*pix^i
-  
+
   fit=poly_fit(pix,m_lower,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma_fit,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
   for i=0,degree do mn_lower+=fit[i]*pix^i
 
 
   n_upper=fix(interpol(mn_upper,pix,pixel))+1
   n_lower=fix(interpol(mn_lower,pix,pixel))
- 
+
   for j=0, nx-1 do begin
     spectrum_val[j]=total(im[j,n_lower[j]:n_upper[j]], /NAN)
     noise[j]=total(sigma[j,n_lower[j]:n_upper[j]]^2, /NAN)
@@ -339,7 +339,7 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
         dq_bval[j]+=total(dq[j,n_lower[j]+ushift:n_upper[j]+ushift], /NAN)
       endif else begin
         errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds' ,logonly=logonly
-        message,' Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds' 
+        message,' Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
       endelse
       if ((n_lower[j]-lshift) ge 0) then begin
         back_l[j]=total(im[j,n_lower[j]-lshift:n_upper[j]-lshift], /NAN)
@@ -359,7 +359,7 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
           dq_bval[j]+=total(dq[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
         endif else begin
           errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds',logonly=logonly
-          message,'Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds' 
+          message,'Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
         endelse
       endfor
       for k=0,n_elements(lshift)-1 do begin
@@ -431,26 +431,26 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
     logprint,'Input dimension error, centroid has different dimension than image array',logonly = logonly
     message,'Input dimension error, centroid has different dimension than image array'
     err = '%extract_func: Input diamension error'
-    
+
   endif
   cent_centroid=fix(mean(centroid))
   new_im=im[*,cent_centroid-20:cent_centroid+20]
   x=indgen(41,start=-20)
   for j=1,nx-2 do begin ;valid for simulated data change to: j=0,nx-1 for actual data
-   y=new_im[j,*]
-   params=mpfitpeak(x,y,a) 
-   peak_loc=where(im[j,*] eq a[0])
-   peak_loc=a[1]
-   peak_loc_pixel=(where(x eq fix(peak_loc)))
-   k=peak_loc_pixel
-   while( y[k] ge threshold*a[0] and k le peak_loc_pixel+20) do k++
-   upper[j]=cent_centroid+x[peak_loc_pixel]+(k-peak_loc_pixel)
-   k=peak_loc_pixel
-   while( y[k] ge threshold*a[0] and k ge peak_loc_pixel-20) do k--
-   lower[j]=cent_centroid-x[peak_loc_pixel]-(peak_loc_pixel-k)
- endfor
- 
-  
+    y=new_im[j,*]
+    params=mpfitpeak(x,y,a)
+    peak_loc=where(im[j,*] eq a[0])
+    peak_loc=a[1]
+    peak_loc_pixel=(where(x eq fix(peak_loc)))
+    k=peak_loc_pixel
+    while( y[k] ge threshold*a[0] and k le peak_loc_pixel+20) do k++
+    upper[j]=cent_centroid+x[peak_loc_pixel]+(k-peak_loc_pixel)
+    k=peak_loc_pixel
+    while( y[k] ge threshold*a[0] and k ge peak_loc_pixel-20) do k--
+    lower[j]=cent_centroid-x[peak_loc_pixel]-(peak_loc_pixel-k)
+  endfor
+
+
   k=0
   upper[0]=upper[1] ;valid for simulated data
   lower[0]=lower[1] ;valid for simulated data
@@ -470,8 +470,8 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
   lu_thresh=median(m_lower)+dev*stddev(m_lower)
   ll_thresh=median(m_lower)-dev*stddev(m_lower)
   pix=indgen(n_elements(m_upper))
-  
-  ;now to find outliers in the max values 
+
+  ;now to find outliers in the max values
   for j=0, n_elements(m_upper)-1 do begin
     if (ul_thresh ge m_upper[j] le uu_thresh) then begin
       if j ge 4 and j le n_elements(m_upper)-5 then  m_upper[j]= mean(m_upper[j-4:j+4]) else if j lt 4 then m_upper[j]= mean(m_upper[j:j+8]) else m_upper[j]= mean(m_upper[j-8:j])
@@ -480,14 +480,14 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
       if j ge 4 and j le n_elements(m_lower)-5 then  m_lower[j]= mean(m_lower[j-4:j+4]) else if  j lt 4 then m_lower[j]= mean(m_lower[j:j+8]) else m_lower[j]= mean(m_lower[j-8:j])
     endif
   endfor
-  
+
   pixel=indgen(nx)
   degree=1
   mn_upper=dblarr(n_elements(m_upper))
   mn_lower=dblarr(n_elements(m_lower))
   fit=poly_fit(pix,m_upper,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
   for i=0,degree do mn_upper+=fit[i]*pix^i
-  
+
   fit=poly_fit(pix,m_lower,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
   for i=0,degree do mn_lower+=fit[i]*pix^i
 
@@ -511,7 +511,7 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
         dq_bval[j]+=total(dq[j,n_lower[j]+ushift:n_upper[j]+ushift], /NAN)
       endif else begin
         errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds' ,logonly=logonly
-        message,' Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds' 
+        message,' Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
       endelse
       if ((n_lower[j]-lshift) ge 0) then begin
         back_l[j]=total(im[j,n_lower[j]-lshift:n_upper[j]-lshift], /NAN)
@@ -531,7 +531,7 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
           dq_bval[j]+=total(dq[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
         endif else begin
           errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds',logonly=logonly
-          message,'Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds' 
+          message,'Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
         endelse
       endfor
       for k=0,n_elements(lshift)-1 do begin
@@ -567,13 +567,13 @@ function control_trace,in_image,infile,trace_type,filename
   if N_params() LT 4 then begin             ;Need at least 4 parameters
     print,'Syntax - control_trace,in_image,infile,trace_type,,filename
     err = '%CONTROL_TRACE: Insufficient number of parameters'
-    
+
   endif
   if keyword_defined(trace_type) eq 0 then begin
     logprint,'CONTROL_TRACE: Type input for trace not defined using default: simple'
     trace_type='simple'
   endif
-   
+
   if(tag_exist(infile,'data_path') eq 1) then data_path=infile.data_path
   if(tag_exist(infile,'temp_path') eq 1) then inter_path=infile.temp_path
   if n_elements(data_path) eq 0 then begin
@@ -599,237 +599,272 @@ function control_trace,in_image,infile,trace_type,filename
     ENDCASE
     logprint,'CONTROL: No temporary file path found. Temporary file directory created in data directory'
   endif else inter_path=detectos(inter_path)
-   
-im=in_image.data
-error=in_image.error
-hdr=in_image.header
-dq=in_image.dq
-;im=mrdfits('D:\simulator_output\kelt9\orbit00\raw_image00000.fits',0,hdr)
-ycut1=SXPAR( hdr, 'YCUT1')
-ycut2=SXPAR( hdr, 'YCUT2')
 
-constu1=1
-constu2=0
-constu3=1
-constl1=1
-constl2=0
-constl3=1
+  im=in_image.data
+  error=in_image.error
+  hdr=in_image.header
+  dq=in_image.dq
+  ;im=mrdfits('D:\simulator_output\kelt9\orbit00\raw_image00000.fits',0,hdr)
+  ycut1=SXPAR( hdr, 'YCUT1')
+  ycut2=SXPAR( hdr, 'YCUT2')
 
-if(tag_exist(infile,'cent_poly_degree') eq 1) then degree=infile.cent_poly_degree else begin
-   degree=1  ;setting degree of polynomial for centroid default is 1
-   logprint,'CONTROL_TRACE: Polynomial degree for centroid assumed to be one.'
-endelse
-nxy=size(im)
-nx=nxy[1]
-ny=nxy[2]
-k=0
+  constu1=1
+  constu2=0
+  constu3=1
+  constl1=1
+  constl2=0
+  constl3=1
 
-if(tag_exist(infile,'centroid') eq 1) then begin
-  cent_value=double(infile.centroid)
-  cent_value=cent_value-ycut1 
-  
+  if(tag_exist(infile,'cent_poly_degree') eq 1) then degree=infile.cent_poly_degree else begin
+    degree=1  ;setting degree of polynomial for centroid default is 1
+    logprint,'CONTROL_TRACE: Polynomial degree for centroid assumed to be one.'
+  endelse
+  nxy=size(im)
+  nx=nxy[1]
+  ny=nxy[2]
+  k=0
 
-  if (cent_value le 0  or double(infile.centroid) ge ycut2) then begin
-    logprint,'CONTROL_TRACE: Centroid value specified in the parameter file is outside the frame.'
-    return,0
-  endif  
-  centroid=make_array(nx,value=cent_value) 
-  pixel=indgen(nx)
-  y=indgen(ny)
-  border=15
-  low_range=centroid[0]-border
-  high_range=centroid[0]+border
-  if (cent_value le border or cent_value ge ny-border+1) then begin
-    logprint,'CONTROL_TRACE: Centroid value specified in the parameter file is close to the edge of the frame.'
-    logprint,'Press q to skip the trace and extraction for current spectrum. Press any key to continue trace and extraction for the current spectrum.'
-    R = GET_KBRD()
-    if R eq 'q' then begin
-      logprint,'CONTROL: Skipping the trace and extraction for current spectrum as requested by the user.'
+  if(tag_exist(infile,'centroid') eq 1) then begin
+    cent_value=double(infile.centroid)
+    cent_value=cent_value-ycut1
+
+    if (cent_value le 0  or double(infile.centroid) ge ycut2) then begin
+      logprint,'CONTROL_TRACE: Centroid value specified in the parameter file is outside the frame.'
       return,0
+    endif
+    centroid=make_array(nx,value=cent_value)
+    pixel=indgen(nx)
+    y=indgen(ny)
+    border=15
+    low_range=centroid[0]-border
+    high_range=centroid[0]+border
+    if (cent_value le border or cent_value ge ny-border+1) then begin
+      logprint,'CONTROL_TRACE: Centroid value specified in the parameter file is close to the edge of the frame.'
+      logprint,'Press q to skip the trace and extraction for current spectrum. Press any key to continue trace and extraction for the current spectrum.'
+      R = GET_KBRD()
+      if R eq 'q' then begin
+        logprint,'CONTROL: Skipping the trace and extraction for current spectrum as requested by the user.'
+        return,0
+      endif else begin
+        if cent_value le border then low_range = 0 else if cent_value ge ny-border+1 then high_range = ny-1
+      endelse
+    endif
+    implot=im[*,low_range:high_range]
+    window,xsize=1800,ysize=600
+    cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15],xrange=[pixel[0],pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
+    cgoplot,pixel,centroid+0.5,color='red';,yrange=[245,265]
+    cgLegend, Title=['Centroid'], LineStyle=[0], SymSize=2, Color=['red'], Location=[pixel[nx-300],centroid[0]+14],/DATA ,thick=1.5,Length=0.05, VSpace=2.0, /Box,/Background, BG_Color='white'
+    write_png,inter_path+filename+'_centroid.png',TVRD(/TRUE)
+  endif else begin
+    logprint,'CONTROL_TRACE: centroid not specified. Calculating on the go'
+    t_cent=dblarr(nx-8+1)
+    for i=0, nx-8 do begin
+      c_sum=total(im[i:i+7,*],1)
+      m=max(c_sum,loc)
+      t_cent[k]=loc
+      k++
+    endfor
+    trace_cen=dblarr(n_elements(t_cent))
+    pix=indgen(n_elements(t_cent))
+    pixel=indgen(nx)
+    fit=poly_fit(pix,t_cent,degree,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
+    for i=0,degree do trace_cen+=fit[i]*pix^i
+    centroid_full=interpol(trace_cen,pix,pixel)
+    centroid=fix(centroid_full)
+    y=indgen(ny)
+    implot=im[*,centroid[0]-15:centroid[0]+15]
+    window,xsize=1800,ysize=600
+    cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15],xrange=[pixel[0],pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
+    cgoplot,pixel,centroid+0.5,color='red';,yrange=[245,265]
+    cgLegend, Title=['Centroid'], LineStyle=[0], SymSize=2, Color=['red'], Location=[pixel[nx-300],centroid[0]+14],/DATA ,thick=1.5,Length=0.05, VSpace=2.0, /Box,/Background, BG_Color='white'
+    write_png,inter_path+filename+'centroid.png',TVRD(/TRUE)
+  endelse
+
+  ;background stuff
+  if tag_exist(infile,'background_trace') eq 0 then begin
+    errorlog,'CONTROL_TRACE: Background trace information is required. Please re-run the simulator with the same',logonly=1
+    message,'CONTROL_TRACE: Background trace information is required. Please re-run the simulator with the same'
+  endif
+  if (file_test(infile.background_trace)eq 0) then begin
+    logprint,'CONTROL_TRACE: Background trace input is pixel deviation from centroid'
+    str_bcg=strsplit(infile.background_trace,',',/EXTRACT)
+    if n_elements(str_bcg) eq 1 then begin
+      ushift = fix(infile.background_trace)
+      lshift = fix(infile.background_trace)
+      if ushift eq 0 then begin
+        logprint,'Shift value for background trace is 0 or not specified'
+      endif
+      multiple=0
     endif else begin
-      if cent_value le border then low_range = 0 else if cent_value ge ny-border+1 then high_range = ny-1
+      shift_val=fix(str_bcg)
+      ush_loc=where(shift_val ge 0,/NULL)
+      lsh_loc=where(shift_val lt 0,/NULL)
+      if ush_loc eq !NULL then undefine,ushift else ushift=shift_val[ush_loc]
+      if lsh_loc eq !NULL then undefine,lshift else lshift=-1*shift_val[lsh_loc]
+      multiple=n_elements(str_bcg)
     endelse
-  endif   
-  implot=im[*,low_range:high_range]
-  window,xsize=1800,ysize=600
-  cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15],xrange=[pixel[0],pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
-  cgoplot,pixel,centroid+0.5,color='red';,yrange=[245,265]
-  cgLegend, Title=['Centroid'], LineStyle=[0], SymSize=2, Color=['red'], Location=[pixel[nx-300],centroid[0]+14],/DATA ,thick=1.5,Length=0.05, VSpace=2.0, /Box,/Background, BG_Color='white'
-  write_png,inter_path+filename+'_centroid.png',TVRD(/TRUE)
-endif else begin
-  logprint,'CONTROL_TRACE: centroid not specified. Calculating on the go'
-  t_cent=dblarr(nx-8+1)
-  for i=0, nx-8 do begin
-    c_sum=total(im[i:i+7,*],1)
-    m=max(c_sum,loc)
-    t_cent[k]=loc
-    k++
-  endfor
-  trace_cen=dblarr(n_elements(t_cent))
-  pix=indgen(n_elements(t_cent))
-  pixel=indgen(nx)
-  fit=poly_fit(pix,t_cent,degree,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
-  for i=0,degree do trace_cen+=fit[i]*pix^i
-  centroid_full=interpol(trace_cen,pix,pixel)
-  centroid=fix(centroid_full)
-  y=indgen(ny)
+  endif else begin
+    bt_file=detectos(infile.background_trace)
+    readcol,bt_file,star,ushift,lshift,u_offset,l_offset,F='A,I,I,D,D'
+    ;fnd the target
+    target=SXPAR( hdr, 'TARGNAME')
+    s=STRCOMPRESS(target, /REMOVE_ALL)
+    bg_loc=WHERE(STRMATCH(star, s, /FOLD_CASE) EQ 1)
+
+    if (n_elements(bg_loc) eq 1) then multiple=0 else multiple=bg_loc
+    if ycut1 le 171 then begin
+      ushift=fix(constu1*u_offset+ushift)
+      lshift=fix(constl1*l_offset+lshift)
+    endif else if ycut1 le 343 then begin
+      ushift=fix(constu2*u_offset+ushift)
+      lshift=fix(constl2*l_offset+lshift)
+    endif else begin
+      ushift=fix(constu3*u_offset+ushift)
+      lshift=fix(constl3*l_offset+lshift)
+    endelse
+  endelse
+  if (idl_ver ge 8) then begin
+    if typename(lshift) eq 'UNDEFINED' then lshift = 'undefined'
+    if typename(ushift) eq 'UNDEFINED' then ushift = 'undefined'
+  endif else begin
+    if datatype(lshift,2) eq 0 then lshift = 'undefined'
+    if datatype(ushift,2) eq 0 then ushift = 'undefined'
+  endelse
+  back_trace={type:multiple,shift_upper:ushift,shift_lower:lshift}
+  ;default extraction of box (similar to COS extraction)
+  ;impliment slope change with extraction cut
+  if tag_exist(infile,'slope') eq 1 then slope=float(infile.slope)
+  if tag_exist(infile,'width') eq 1 then width=fix(infile.width)
+  if tag_exist(infile,'upper') eq 1 then upper=fix(infile.upper)
+  if tag_exist(infile,'lower') eq 1 then lower=fix(infile.lower)
+  if tag_exist(infile,'threshold') eq 1 then threshold=fix(infile.threshold)
+
+
+  logprint,'Centroid value used is '+strtrim(string(centroid[0]),2)+' at the edge of the spectrum.'
+  if datatype(slope,2) ne 0 then logprint,'Slope value used is '+strtrim(string(slope),2)+'.'
+  if datatype(width,2) ne 0 then if width gt 0 then logprint,'Width value used for extraction type simple is '+strtrim(string(width),2)+'.'
+  if datatype(fix(infile.upper),2) ne 0 then logprint,'Upper width value used for extraction type fixed is '+strtrim(string(fix(infile.upper)),2)+'.'
+  if datatype(fix(infile.lower),2) ne 0 then logprint,'Lower width value used for extraction type fixed is '+strtrim(string(fix(infile.lower)),2)+'.'
+  if datatype(double(infile.threshold),2) ne 0 then logprint,'Threshold value used for extraction type variable/function is '+strtrim(string(double(infile.threshold)),2)+'.'
+
+  if datatype(slope,2) eq 0 then begin
+    logprint,'Slope value not found. Using default value of -9.76e-4.'
+    slope=-9.76e-4
+  endif
+  if datatype(width,2) eq 0 then begin
+    logprint,'Width value not found. Using default value of 10.'
+    width=10
+  endif
+  if(tag_exist(infile,'centroid') eq 0) then begin
+    logprint,'Slope value not required as centroid calculated on the go and have slope information. Setting it to 0.'
+    slope=0
+  endif  
+  
+  def_spectrum = extract_box(im,error,dq,centroid,slope,width,back_trace)
+     
+  ;extraction
+  case trace_type of
+    'simple'  : begin
+      extraction = extract_box(im,error,dq,centroid,slope,width,back_trace)
+    end
+    'fixed'   : begin
+      if tag_exist(infile,'upper') eq 1 then upper=fix(infile.upper) else begin
+        logprint,'Upper width value not found. Using default value of 10.'
+        upper=10
+      endelse
+      if tag_exist(infile,'lower') eq 1 then lower=fix(infile.lower) else begin
+        logprint,'Lower width value not found. Using default value of 10.'
+        lower=10
+      endelse
+      extraction = extract_sum(im,error,dq,centroid,slope,upper,lower,back_trace)
+    end
+    'variable': begin
+      if tag_exist(infile,'threshold') eq 1 then threshold=double(infile.threshold) else begin
+        logprint,'Threshold value not found. Using default value of 0.01'
+        threshold=0.01
+      endelse
+      extraction = extract_varsum(im,error,dq,centroid,threshold,back_trace)
+    end
+    'function': begin
+      if tag_exist(infile,'threshold') eq 1 then threshold=double(infile.threshold) else begin
+        logprint,'Threshold value not found. Using default value of 0.01'
+        threshold=0.01
+      endelse
+      extraction = extract_func(im,error,dq,centroid,threshold,back_trace)
+    end
+    else :      begin
+      logprint,'CONTROL_TRACE: Invalid type input for trace: Please recheck your input',logonly=logonly
+      message,' Invalid type input for trace: Please recheck your input'
+    end
+  endcase
   implot=im[*,centroid[0]-15:centroid[0]+15]
   window,xsize=1800,ysize=600
   cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15],xrange=[pixel[0],pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
-  cgoplot,pixel,centroid+0.5,color='red';,yrange=[245,265]
-  cgLegend, Title=['Centroid'], LineStyle=[0], SymSize=2, Color=['red'], Location=[pixel[nx-300],centroid[0]+14],/DATA ,thick=1.5,Length=0.05, VSpace=2.0, /Box,/Background, BG_Color='white'
-  write_png,inter_path+filename+'centroid.png',TVRD(/TRUE)
-endelse
-
-;background stuff
-if tag_exist(infile,'background_trace') eq 0 then begin
-  errorlog,'CONTROL_TRACE: Background trace information is required. Please re-run the simulator with the same',logonly=1
-  message,'CONTROL_TRACE: Background trace information is required. Please re-run the simulator with the same'
-endif  
-if (file_test(infile.background_trace)eq 0) then begin
-  logprint,'CONTROL_TRACE: Background trace input is pixel deviation from centroid'
-  str_bcg=strsplit(infile.background_trace,',',/EXTRACT)
-  if n_elements(str_bcg) eq 1 then begin
-    ushift = fix(infile.background_trace)
-    lshift = fix(infile.background_trace) 
-    if ushift eq 0 then begin
-      logprint,'Shift value for background trace is 0 or not specified'  
-    endif  
-    multiple=0
+  cgoplot,pixel,extraction.lower,color='red';,yrange=[245,265]
+  cgoplot,pixel,extraction.upper+1,color='red';,yrange=[245,265]
+  cgLegend, Title=['Trace region'], LineStyle=[0], SymSize=2, Color=['red'], Location=[pixel[nx-400],centroid[0]+14],/DATA ,thick=1.5,Length=0.05, VSpace=2.0, /Box,/Background, BG_Color='white'
+  write_png,inter_path+filename+'_trace.png',TVRD(/TRUE)
+  colaps=total(im,1)
+  ypix=indgen(n_elements(colaps))
+  window,xsize=1300,ysize=600
+  cgplot,ypix,colaps,xrange=[min(ypix),max(ypix)],xtitle='Y pixels', Title='Approximate extraction and background region.',symsize=2,charsize=2,charthick=1.5,xthick=1.5,ythick=1.5
+  extr_low=mean(extraction.lower)
+  extr_hi=mean(extraction.upper)
+  cgoplot,[extr_low,extr_low],[!Y.CRange[0],!Y.CRange[1]], color='red'
+  cgoplot,[extr_hi,extr_hi],[!Y.CRange[0],!Y.CRange[1]], color='red'
+  if multiple eq 0 then begin
+    cgoplot,[extr_low-lshift,extr_low-lshift],[!Y.CRange[0],!Y.CRange[1]], color='blue'
+    cgoplot,[extr_hi-lshift,extr_hi-lshift],[!Y.CRange[0],!Y.CRange[1]], color=' blue'
+    cgoplot,[extr_low+ushift,extr_low+ushift],[!Y.CRange[0],!Y.CRange[1]], color='blue'
+    cgoplot,[extr_hi+ushift,extr_hi+ushift],[!Y.CRange[0],!Y.CRange[1]], color='blue'
   endif else begin
-    shift_val=fix(str_bcg)
-    ush_loc=where(shift_val ge 0,/NULL)
-    lsh_loc=where(shift_val lt 0,/NULL)
-    if ush_loc eq !NULL then undefine,ushift else ushift=shift_val[ush_loc]
-    if lsh_loc eq !NULL then undefine,lshift else lshift=-1*shift_val[lsh_loc]
-    multiple=n_elements(str_bcg)
+    for i=0, n_elements(ushift)-1 do begin
+      bg_plot_loc=ushift[i]+centroid[0]
+      cgoplot,[bg_plot_loc,bg_plot_loc],[!Y.CRange[0],!Y.CRange[1]], color='blue'
+    endfor
+    for i=0, n_elements(lshift)-1 do begin
+      bg_plot_loc=centroid[0]-lshift[i]
+      cgoplot,[bg_plot_loc,bg_plot_loc],[!Y.CRange[0],!Y.CRange[1]], color='blue'
+    endfor
   endelse
-endif else begin  
-  bt_file=detectos(infile.background_trace)
-  readcol,bt_file,star,ushift,lshift,u_offset,l_offset,F='A,I,I,D,D'
-  ;fnd the target
-  target=SXPAR( hdr, 'TARGNAME')
-  s=STRCOMPRESS(target, /REMOVE_ALL)
-  bg_loc=WHERE(STRMATCH(star, s, /FOLD_CASE) EQ 1)
-
-  if (n_elements(bg_loc) eq 1) then multiple=0 else multiple=bg_loc
-  if ycut1 le 171 then begin
-    ushift=fix(constu1*u_offset+ushift)
-    lshift=fix(constl1*l_offset+lshift)
-  endif else if ycut1 le 343 then begin
-    ushift=fix(constu2*u_offset+ushift)
-    lshift=fix(constl2*l_offset+lshift)
-  endif else begin
-    ushift=fix(constu3*u_offset+ushift)
-    lshift=fix(constl3*l_offset+lshift)
-  endelse
-endelse  
-if (idl_ver ge 8) then begin
-  if typename(lshift) eq 'UNDEFINED' then lshift = 'undefined'
-  if typename(ushift) eq 'UNDEFINED' then ushift = 'undefined'
-endif else begin
-  if datatype(lshift,2) eq 0 then lshift = 'undefined'
-  if datatype(ushift,2) eq 0 then ushift = 'undefined'
-endelse
-back_trace={type:multiple,shift_upper:ushift,shift_lower:lshift}
-;default extraction of box (similar to COS extraction)
-;impliment slope change with extraction cut
-if tag_exist(infile,'slope') eq 1 then slope=float(infile.slope)
-if tag_exist(infile,'width') eq 1 then width=fix(infile.width)
-if tag_exist(infile,'upper') eq 1 then upper=fix(infile.upper)
-if tag_exist(infile,'lower') eq 1 then lower=fix(infile.lower)
-if tag_exist(infile,'threshold') eq 1 then threshold=fix(infile.threshold)
-
-
-logprint,'Centroid value used is '+strtrim(string(centroid[0]),2)+' at the edge of the spectrum.'
-if datatype(slope,2) ne 0 then logprint,'Slope value used is '+strtrim(string(slope),2)+'.'
-if datatype(width,2) ne 0 then if width gt 0 then logprint,'Width value used for extraction type simple is '+strtrim(string(width),2)+'.'
-if datatype(fix(infile.upper),2) ne 0 then logprint,'Upper width value used for extraction type fixed is '+strtrim(string(fix(infile.upper)),2)+'.'
-if datatype(fix(infile.lower),2) ne 0 then logprint,'Lower width value used for extraction type fixed is '+strtrim(string(fix(infile.lower)),2)+'.'
-if datatype(double(infile.threshold),2) ne 0 then logprint,'Threshold value used for extraction type variable/function is '+strtrim(string(double(infile.threshold)),2)+'.'
-
-if datatype(slope,2) eq 0 then begin
-  logprint,'Slope value not found. Using default value of -9.76e-4.'
-  slope=-9.76e-4
-endif
-if datatype(width,2) eq 0 then begin
-  logprint,'Width value not found. Using default value of 10.'
-  width=10
-endif
-def_spectrum = extract_box(im,error,dq,centroid,slope,width,back_trace)
-
-;extraction
-case trace_type of
-    'simple'  : begin
-                  extraction = extract_box(im,error,dq,centroid,slope,width,back_trace)
-                end  
-    'fixed'   : begin
-                  if tag_exist(infile,'upper') eq 1 then upper=fix(infile.upper) else begin
-                    logprint,'Upper width value not found. Using default value of 10.'
-                    upper=10
-                  endelse
-                  if tag_exist(infile,'lower') eq 1 then lower=fix(infile.lower) else begin
-                    logprint,'Lower width value not found. Using default value of 10.'
-                    lower=10
-                  endelse  
-                  extraction = extract_sum(im,error,dq,centroid,slope,upper,lower,back_trace)
-                end  
-    'variable': begin
-                  if tag_exist(infile,'threshold') eq 1 then threshold=double(infile.threshold) else begin
-                    logprint,'Threshold value not found. Using default value of 0.01'
-                    threshold=0.01
-                  endelse
-                  extraction = extract_varsum(im,error,dq,centroid,threshold,back_trace)
-                end  
-    'function': begin
-                  if tag_exist(infile,'threshold') eq 1 then threshold=double(infile.threshold) else begin
-                    logprint,'Threshold value not found. Using default value of 0.01'
-                    threshold=0.01
-                  endelse
-                  extraction = extract_func(im,error,dq,centroid,threshold,back_trace)
-                end
-    else :      begin
-                  logprint,'CONTROL_TRACE: Invalid type input for trace: Please recheck your input',logonly=logonly
-                  message,' Invalid type input for trace: Please recheck your input'
-                end  
-endcase
-implot=im[*,centroid[0]-15:centroid[0]+15]
-window,xsize=1800,ysize=600
-cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15],xrange=[pixel[0],pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
-cgoplot,pixel,extraction.lower,color='red';,yrange=[245,265]
-cgoplot,pixel,extraction.upper+1,color='red';,yrange=[245,265]
-cgLegend, Title=['Trace region'], LineStyle=[0], SymSize=2, Color=['red'], Location=[pixel[nx-400],centroid[0]+14],/DATA ,thick=1.5,Length=0.05, VSpace=2.0, /Box,/Background, BG_Color='white'
-write_png,inter_path+filename+'_trace.png',TVRD(/TRUE)  
-ext_data=extraction.data
-ext_error=extraction.error
-ext_bck=extraction.bck
-ext_bck_error=extraction.bck_error
-ext_dq=extraction.dq
-ext_bg_dq=extraction.dq_bcg
-;comparison to make sure extraction is proper, comparison with default 
-;plt=plot(ext_data)
-;comparison of pixel vs extraction region
-sd=dblarr(52)
-fl=dblarr(52)
-pi=dblarr(52)
-j=0
-for i=1, 52 do begin
-  extractions = extract_box(im,error,dq,centroid,slope,i,back_trace)
-  flux=extractions.data
-  unc=extractions.error
-  continum_flux=flux[-150:-10]
-  continum_error=unc[-150:-10]
-  x=indgen(n_elements(continum_flux))
-  tp=trapz_error(x,continum_flux,continum_error)
-  sd[j]=stddev(continum_flux)
-  fl[j]=tp[0]
-  pi[j]=i
-  j++
-endfor
-cgplot,pi,sd,psym=16,Color='red7',xtitle='pixels from centroid',ytitle='Sigma of extracted spectrum', title='Flux and sigma variation with extraction window for spectrum in hotter continuum'
-cgAxis, YAxis=1, YRange=[double(min(fl))-100, double(max(fl))+10000],ytitle='Flux of extracted spectrum', /Save
-cgoplot,pi,fl,psym=16,Color='blue'
-write_png,inter_path+filename+'_pixel_vs_flux.png',TVRD(/TRUE)
-spectrum={data:ext_data,error:ext_error,header:hdr,background:ext_bck,bck_error:ext_bck_error,dq:ext_dq,dq_bg:ext_bg_dq} 
-return,spectrum  
+  write_png,inter_path+filename+'_trace2.png',TVRD(/TRUE)
+  ext_data=extraction.data
+  ext_error=extraction.error
+  ext_bck=extraction.bck
+  ext_bck_error=extraction.bck_error
+  ext_dq=extraction.dq
+  ext_bg_dq=extraction.dq_bcg
+  ;comparison to make sure extraction is proper, comparison with default
+  ;plt=plot(ext_data)
+  ;comparison of pixel vs extraction region
+  sd=dblarr(52)
+  fl=dblarr(52)
+  pi=dblarr(52)
+  j=0
+  for i=1, 52 do begin
+    extractions = extract_box(im,error,dq,centroid,slope,i,back_trace)
+    flux=extractions.data
+    unc=extractions.error
+    if (idl_ver ge 8) then begin
+      continum_flux=flux[-150:-10]
+      continum_error=unc[-150:-10]
+    endif else begin
+      continum_flux=flux[n_elements(flux)-150:n_elements(flux)-10]
+      continum_error=unc[n_elements(flux)-150:n_elements(flux)-10]
+    endelse
+      
+    x=indgen(n_elements(continum_flux))
+    tp=trapz_error(x,continum_flux,continum_error)
+    sd[j]=stddev(continum_flux)
+    fl[j]=tp[0]
+    pi[j]=i
+    j++
+  endfor
+  window,xsize=1300,ysize=600
+  cgplot,pi,fl,psym=16,Color='red7',xtitle='pixels from centroid',ytitle='Flux of extracted spectrum', title='Flux and sigma variation with extraction window for spectrum in hotter continuum', YRange=[double(min(fl))-100, double(max(fl))+10000],symsize=2,charsize=2,charthick=1.5,xthick=1.5,ythick=1.5
+  cgAxis, YAxis=1,ytitle=' Sigma of extracted spectrum', YRange=[double(min(sd))-10, double(max(sd))+10],charsize=2,charthick=1.5,xthick=1.5,ythick=1.5, /Save
+  cgoplot,pi,sd,psym=16,Color='blue'
+  write_png,inter_path+filename+'_pixel_vs_flux.png',TVRD(/TRUE)
+  spectrum={data:ext_data,error:ext_error,header:hdr,background:ext_bck,bck_error:ext_bck_error,dq:ext_dq,dq_bg:ext_bg_dq}
+  return,spectrum
 end
