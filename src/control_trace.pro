@@ -1,4 +1,31 @@
-;data quality carried out only for spectrum. Modification of background and data quality remaining
+; NAME:
+;      CONTROL_TRACE
+;
+; PURPOSE:
+;      Returns extracted spectrum and assosiated products.
+;      
+; CALLING SEQUENCE:
+;      spectrum = CONTROL_TRACE(in_image,infile,trace_type,filename)
+;
+; INPUTS:
+;      in_image = The 2D array from which spectrum is to extracted.
+;      infile   = Parameter file for CONTROL
+;      filename = Filename coresponding to the in_image 
+;
+; OPTIONAL INPUTS
+;      trace_type = Type of spectrum extraction(simple,fixed,variable,function). Default is simple.
+;      
+; OUTPUT:
+;      spectrum     = Structure containing extracted 1D spectrum and 1D background with assosiated
+;                     error, data quality flags and header.
+;
+; PROCEDURE:
+;      Spectrum trace and extractor for CUTE;
+; MODIFICATION HISTORY:
+;      created 12.02.2019 by A. G. Sreejith
+;      modified 18.08.2019 by A. G. Sreejith
+;      modified 05.02.2020 by A. G. Sreejith
+;##################################################################################################
 
 
 ;Simplest extraction a box with fixed width, centroid and slope
@@ -39,14 +66,16 @@ function extract_box,im,sigma,dq,centroid,slope,width,back_trace
   backg_error=dblarr(nx)
   pixel=indgen(nx)
   if keyword_defined(centroid) then centroid=centroid else begin
-    logprint,'CONTROL_TRACE: centroid for box extraction not specified. Calculating on the go',logonly=logonly
+    logprint,'CONTROL_TRACE: centroid for box extraction not specified. Calculating on the go'$
+            ,logonly=logonly
     colsum=total(im,1)
     maximum=max(colsum[0],loc)
     centroid=make_array(nx,value=loc)
   endelse
 
   if width le 0 then begin
-    logprint,'Width specified is less than or equal to zero. CONTROL will reset it to default value of 10.'
+    logprint,'Width specified is less than or equal to zero.'$
+            +' CONTROL will reset it to default value of 10.'
     width =10
   endif
   stp= fix(centroid+slope*pixel+width)
@@ -64,16 +93,20 @@ function extract_box,im,sigma,dq,centroid,slope,width,back_trace
         noise_u[j]=total(sigma[j,str[j]+ushift:stp[j]+ushift]^2, /NAN)
         dq_bval[j]+=total(dq[j,str[j]+ushift:stp[j]+ushift], /NAN)
       endif else begin
-        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds',logonly=logonly
-        message,' Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
+        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                +' Please re-enter a new upper offset for backgrounds',logonly=logonly
+        message,' Background offset specified is outside the CCD area.'$
+                +' Please re-enter a new upper offset for backgrounds'
       endelse
       if ((str[j]-lshift) ge 0) then begin
         back_l[j]=total(im[j,str[j]-lshift:stp[j]-lshift], /NAN)
         noise_l[j]=total(sigma[j,str[j]-lshift:stp[j]-lshift]^2, /NAN)
         dq_bval[j]+=total(dq[j,str[j]-lshift:stp[j]-lshift], /NAN)
       endif else begin
-        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds',logonly=logonly
-        message,' Background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds'
+        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                +' Please re-enter a new lower offset for backgrounds',logonly=logonly
+        message,' Background offset specified is outside the CCD area.'$
+                +' Please re-enter a new lower offset for backgrounds'
       endelse
       background[j]=(back_u[j]+back_l[j])/2
       backg_error[j]=(sqrt(noise_u[j]+noise_l[j])/4)
@@ -84,8 +117,10 @@ function extract_box,im,sigma,dq,centroid,slope,width,back_trace
           noise_u[j]=total(sigma[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
           dq_bval[j]+=total(dq[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
         endif else begin
-          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds',logonly=logonly
-          message,' Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
+          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new upper offset for backgrounds',logonly=logonly
+          message,' Background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new upper offset for backgrounds'
         endelse
       endfor
       for k=0,n_elements(lshift)-1 do begin
@@ -94,8 +129,10 @@ function extract_box,im,sigma,dq,centroid,slope,width,back_trace
           noise_l[j]=total(sigma[j,centroid[j]-lshift[k]:centroid[j]-lshift[k]+1], /NAN)
           dq_bval[j]+=total(dq[j,centroid[j]-lshift[k]:centroid[j]-lshift[k]+1], /NAN)
         endif else begin
-          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds',logonly=logonly
-          message,' Background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds'
+          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new lower offset for backgrounds',logonly=logonly
+          message,' Background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new lower offset for backgrounds'
         endelse
       endfor
       bg_length=double(n_elements(ushift)+n_elements(lshift))
@@ -113,7 +150,8 @@ function extract_box,im,sigma,dq,centroid,slope,width,back_trace
   prbb=where(dq_bval ge 1)
   dq_bval(prbb)=1
   undefine,prbb
-  spectrum={data:spectrum_val,error:error,bck:background,bck_error:backg_error,centroid:centroid,lower:str,upper:stp,dq:dq_val,dq_bcg:dq_bval}
+  spectrum={data:spectrum_val,error:error,bck:background,bck_error:backg_error,centroid:centroid,$
+            lower:str,upper:stp,dq:dq_val,dq_bcg:dq_bval}
   return,spectrum
 end
 
@@ -159,11 +197,13 @@ function extract_sum,im,sigma,dq,centroid,slope,upper,lower,back_trace
     err = '%extract_sum: Input diamension error'
   endif
   if upper le 0 then begin
-    logprint,'Upper width specified is less than or equal to zero. CONTROL will reset it to default value of 10.'
+    logprint,'Upper width specified is less than or equal to zero.'$
+            +' CONTROL will reset it to default value of 10.'
     upper =10
   endif
   if lower le 0 then begin
-    logprint,'Lower width specified is less than or equal to zero. CONTROL will reset it to default value of 10.'
+    logprint,'Lower width specified is less than or equal to zero.'
+            +' CONTROL will reset it to default value of 10.'
     lower =10
   endif
   stp= fix(centroid+slope*pixel+upper)
@@ -181,16 +221,20 @@ function extract_sum,im,sigma,dq,centroid,slope,upper,lower,back_trace
         noise_u[j]=total(sigma[j,str[j]+ushift:stp[j]+ushift]^2, /NAN)
         dq_bval[j]+=total(dq[j,str[j]+ushift:stp[j]+ushift], /NAN)
       endif else begin
-        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area',logonly=logonly
-        message,' Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
+        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area'$
+                ,logonly=logonly
+        message,' Background offset specified is outside the CCD area.'$
+               +' Please re-enter a new upper offset for backgrounds'
       endelse
       if ((stp[j]-lshift) ge 0) then begin
         back_l[j]=total(im[j,str[j]-lshift:stp[j]-lshift], /NAN)
         noise_l[j]=total(sigma[j,str[j]-lshift:stp[j]-lshift]^2, /NAN)
         dq_bval[j]+=total(dq[j,str[j]-lshift:stp[j]-lshift], /NAN)
       endif else begin
-        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds',logonly=logonly
-        message,' Background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds'
+        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                +' Please re-enter a new lower offset for backgrounds',logonly=logonly
+        message,' Background offset specified is outside the CCD area.'$
+                +' Please re-enter a new lower offset for backgrounds'
       endelse
       background[j]=(back_u[j]+back_l[j])/2
       backg_error[j]=(sqrt(noise_u[j]+noise_l[j])/4)
@@ -201,8 +245,10 @@ function extract_sum,im,sigma,dq,centroid,slope,upper,lower,back_trace
           noise_u[j]=total(sigma[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
           dq_bval[j]+=total(dq[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
         endif else begin
-          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds',logonly=logonly
-          message,' Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
+          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new upper offset for backgrounds',logonly=logonly
+          message,' Background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new upper offset for backgrounds'
         endelse
       endfor
       for k=0,n_elements(lshift)-1 do begin
@@ -211,8 +257,10 @@ function extract_sum,im,sigma,dq,centroid,slope,upper,lower,back_trace
           noise_u[j]=total(sigma[j,centroid[j]-lshift[k]:centroid[j]-lshift[k]+1], /NAN)
           dq_bval[j]+=total(dq[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
         endif else begin
-          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds',logonly=logonly
-          message,' Background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds'
+          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new upper offset for backgrounds',logonly=logonly
+          message,' Background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new lower offset for backgrounds'
         endelse
       endfor
       bg_length=double(n_elements(ushift)+n_elements(lshift))
@@ -229,7 +277,8 @@ function extract_sum,im,sigma,dq,centroid,slope,upper,lower,back_trace
   prbb=where(dq_bval ge 1)
   dq_bval(prbb)=1
   undefine,prbb
-  spectrum={data:spectrum_val,error:error,bck:background,bck_error:backg_error,centroid:centroid,lower:str,upper:stp,dq:dq_val,dq_bcg:dq_bval}
+  spectrum={data:spectrum_val,error:error,bck:background,bck_error:backg_error,centroid:centroid,$
+            lower:str,upper:stp,dq:dq_val,dq_bcg:dq_bval}
   return,spectrum
 end
 
@@ -307,20 +356,26 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
   ;now to find outliers in the max values
   for j=0, n_elements(m_upper)-1 do begin
     if (ul_thresh ge m_upper[j] le uu_thresh) then begin
-      if j ge 4 and j le n_elements(m_upper)-5 then  m_upper[j]= median(m_upper[j-4:j+4]) else if j lt 4 then m_upper[j]= median(m_upper[j:j+8]) else m_upper[j]= median(m_upper[j-8:j])
+      if j ge 4 and j le n_elements(m_upper)-5 then  m_upper[j]= median(m_upper[j-4:j+4]) $
+        else if j lt 4 then m_upper[j]= median(m_upper[j:j+8]) $
+        else m_upper[j]= median(m_upper[j-8:j])
     endif
     if (ll_thresh ge m_lower[j] le lu_thresh) then begin
-      if j ge 4 and j le n_elements(m_lower)-5 then  m_lower[j]= median(m_lower[j-4:j+4]) else if  j lt 4 then m_lower[j]= median(m_lower[j:j+8]) else m_lower[j]= median(m_lower[j-8:j])
+      if j ge 4 and j le n_elements(m_lower)-5 then  m_lower[j]= median(m_lower[j-4:j+4]) $
+        else if  j lt 4 then m_lower[j]= median(m_lower[j:j+8]) $
+        else m_lower[j]= median(m_lower[j-8:j])
     endif
   endfor
   pixel=indgen(nx)
   degree=1
   mn_upper=dblarr(n_elements(m_upper))
   mn_lower=dblarr(n_elements(m_lower))
-  fit=poly_fit(pix,m_upper,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma_fit,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
+  fit=poly_fit(pix,m_upper,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma_fit,$
+               STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
   for i=0,degree do mn_upper+=fit[i]*pix^i
 
-  fit=poly_fit(pix,m_lower,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma_fit,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
+  fit=poly_fit(pix,m_lower,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma_fit,$
+               STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
   for i=0,degree do mn_lower+=fit[i]*pix^i
 
 
@@ -338,16 +393,20 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
         noise_u[j]=total(sigma[j,n_lower[j]+ushift:n_upper[j]+ushift]^2, /NAN)
         dq_bval[j]+=total(dq[j,n_lower[j]+ushift:n_upper[j]+ushift], /NAN)
       endif else begin
-        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds' ,logonly=logonly
-        message,' Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
+        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                +' Please re-enter a new upper offset for backgrounds' ,logonly=logonly
+        message,' Background offset specified is outside the CCD area.'$
+                +' Please re-enter a new upper offset for backgrounds'
       endelse
       if ((n_lower[j]-lshift) ge 0) then begin
         back_l[j]=total(im[j,n_lower[j]-lshift:n_upper[j]-lshift], /NAN)
         noise_l[j]=total(sigma[j,n_lower[j]-lshift:n_upper[j]-lshift]^2, /NAN)
         dq_bval[j]+=total(dq[j,n_lower[j]-lshift:n_upper[j]-lshift], /NAN)
       endif else begin
-        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds',logonly=logonly
-        message,'Background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds'
+        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                +' Please re-enter a new lower offset for backgrounds',logonly=logonly
+        message,'Background offset specified is outside the CCD area.'$
+                +' Please re-enter a new lower offset for backgrounds'
       endelse
       background[j]=(back_u[j]+back_l[j])/2
       backg_error[j]=(sqrt(noise_u[j]+noise_l[j])/4)
@@ -358,8 +417,10 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
           noise_u[j]=total(sigma[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
           dq_bval[j]+=total(dq[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
         endif else begin
-          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds',logonly=logonly
-          message,'Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
+          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new upper offset for backgrounds',logonly=logonly
+          message,'Background offset specified is outside the CCD area.'$
+                 +' Please re-enter a new upper offset for backgrounds'
         endelse
       endfor
       for k=0,n_elements(lshift)-1 do begin
@@ -368,8 +429,10 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
           noise_u[j]=total(sigma[j,centroid[j]-lshift[k]:centroid[j]-lshift[k]+1], /NAN)
           dq_bval[j]+=total(dq[j,centroid[j]-lshift[k]:centroid[j]-lshift[k]+1], /NAN)
         endif else begin
-          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds',logonly=logonly
-          message,'Backround offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds'
+          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new lower offset for backgrounds',logonly=logonly
+          message,'Backround offset specified is outside the CCD area.'$
+                 +' Please re-enter a new lower offset for backgrounds'
         endelse
       endfor
       bg_length=double(n_elements(ushift)+n_elements(lshift))
@@ -386,7 +449,8 @@ function extract_varsum,im,sigma,dq,centroid,threshold,back_trace
   prbb=where(dq_bval ge 1)
   dq_bval(prbb)=1
   undefine,prbb
-  spectrum={data:spectrum_val,error:error,bck:background,bck_error:backg_error,centroid:centroid,lower:n_lower,upper:n_upper,dq:dq_val,dq_bcg:dq_bval}
+  spectrum={data:spectrum_val,error:error,bck:background,bck_error:backg_error,centroid:centroid,$
+            lower:n_lower,upper:n_upper,dq:dq_val,dq_bcg:dq_bval}
 
   return,spectrum
 end
@@ -428,7 +492,8 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
   background=dblarr(nx)
   backg_error=dblarr(nx)
   if n_elements(centroid) ne nx then begin
-    logprint,'Input dimension error, centroid has different dimension than image array',logonly = logonly
+    logprint,'Input dimension error, centroid has different dimension than image array'$
+            ,logonly = logonly
     message,'Input dimension error, centroid has different dimension than image array'
     err = '%extract_func: Input diamension error'
 
@@ -474,10 +539,12 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
   ;now to find outliers in the max values
   for j=0, n_elements(m_upper)-1 do begin
     if (ul_thresh ge m_upper[j] le uu_thresh) then begin
-      if j ge 4 and j le n_elements(m_upper)-5 then  m_upper[j]= mean(m_upper[j-4:j+4]) else if j lt 4 then m_upper[j]= mean(m_upper[j:j+8]) else m_upper[j]= mean(m_upper[j-8:j])
+      if j ge 4 and j le n_elements(m_upper)-5 then  m_upper[j]= mean(m_upper[j-4:j+4]) $
+      else if j lt 4 then m_upper[j]= mean(m_upper[j:j+8]) else m_upper[j]= mean(m_upper[j-8:j])
     endif
     if (ll_thresh ge m_lower[j] le lu_thresh) then begin
-      if j ge 4 and j le n_elements(m_lower)-5 then  m_lower[j]= mean(m_lower[j-4:j+4]) else if  j lt 4 then m_lower[j]= mean(m_lower[j:j+8]) else m_lower[j]= mean(m_lower[j-8:j])
+      if j ge 4 and j le n_elements(m_lower)-5 then  m_lower[j]= mean(m_lower[j-4:j+4]) $
+        else if  j lt 4 then m_lower[j]= mean(m_lower[j:j+8]) else m_lower[j]= mean(m_lower[j-8:j])
     endif
   endfor
 
@@ -485,10 +552,12 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
   degree=1
   mn_upper=dblarr(n_elements(m_upper))
   mn_lower=dblarr(n_elements(m_lower))
-  fit=poly_fit(pix,m_upper,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
+  fit=poly_fit(pix,m_upper,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma,$
+               STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
   for i=0,degree do mn_upper+=fit[i]*pix^i
 
-  fit=poly_fit(pix,m_lower,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
+  fit=poly_fit(pix,m_lower,1,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma,$
+               STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
   for i=0,degree do mn_lower+=fit[i]*pix^i
 
 
@@ -510,16 +579,20 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
         noise_u[j]=total(sigmaim[j,n_lower[j]+ushift:n_upper[j]+ushift]^2, /NAN)
         dq_bval[j]+=total(dq[j,n_lower[j]+ushift:n_upper[j]+ushift], /NAN)
       endif else begin
-        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds' ,logonly=logonly
-        message,' Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
+        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                +' Please re-enter a new upper offset for backgrounds' ,logonly=logonly
+        message,' Background offset specified is outside the CCD area.'$
+               +' Please re-enter a new upper offset for backgrounds'
       endelse
       if ((n_lower[j]-lshift) ge 0) then begin
         back_l[j]=total(im[j,n_lower[j]-lshift:n_upper[j]-lshift], /NAN)
         noise_l[j]=total(sigmaim[j,n_lower[j]-lshift:n_upper[j]-lshift]^2, /NAN)
         dq_bval[j]+=total(dq[j,n_lower[j]-lshift:n_upper[j]-lshift], /NAN)
       endif else begin
-        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds',logonly=logonly
-        message,'Backround offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds'
+        errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                +' Please re-enter a new lower offset for backgrounds',logonly=logonly
+        message,'Backround offset specified is outside the CCD area.'$
+               +' Please re-enter a new lower offset for backgrounds'
       endelse
       background[j]=(back_u[j]+back_l[j])/2
       backg_error[j]=(sqrt(noise_u[j]+noise_l[j])/4)
@@ -530,8 +603,10 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
           noise_u[j]=total(sigmaim[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
           dq_bval[j]+=total(dq[j,centroid[j]+ushift[k]:centroid[j]+ushift[k]+1], /NAN)
         endif else begin
-          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds',logonly=logonly
-          message,'Background offset specified is outside the CCD area. Please re-enter a new upper offset for backgrounds'
+          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new upper offset for backgrounds',logonly=logonly
+          message,'Background offset specified is outside the CCD area.'$
+                 +' Please re-enter a new upper offset for backgrounds'
         endelse
       endfor
       for k=0,n_elements(lshift)-1 do begin
@@ -540,8 +615,10 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
           noise_u[j]=total(sigmaim[j,centroid[j]-lshift[k]:centroid[j]-lshift[k]+1], /NAN)
           dq_bval[j]+=total(dq[j,centroid[j]-lshift[k]:centroid[j]-lshift[k]+1], /NAN)
         endif else begin
-          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds',logonly=logonly
-          message,'Background offset specified is outside the CCD area. Please re-enter a new lower offset for backgrounds'
+          errorlog,'CONTROL_TRACE: background offset specified is outside the CCD area.'$
+                  +' Please re-enter a new lower offset for backgrounds',logonly=logonly
+          message,'Background offset specified is outside the CCD area.'$
+                 +' Please re-enter a new lower offset for backgrounds'
         endelse
       endfor
       bg_length=double(n_elements(ushift)+n_elements(lshift))
@@ -558,7 +635,8 @@ function extract_func,im,sigmaim,dq,centroid,threshold,back_trace
   prbb=where(dq_bval ge 1)
   dq_bval(prbb)=1
   undefine,prbb
-  spectrum={data:spectrum_val,error:error,bck:background,bck_error:backg_error,centroid:centroid,lower:n_lower,upper:n_upper,dq:dq_val,dq_bcg:dq_bval}
+  spectrum={data:spectrum_val,error:error,bck:background,bck_error:backg_error,centroid:centroid,$
+            lower:n_lower,upper:n_upper,dq:dq_val,dq_bcg:dq_bval}
   return,spectrum
 end
 
@@ -597,7 +675,8 @@ function control_trace,in_image,infile,trace_type,filename
       'WINDOWS': inter_path=data_path+'temp\' ;WINDOWS
       'UNIX': inter_path=data_path+'temp/'; UNIX.
     ENDCASE
-    logprint,'CONTROL: No temporary file path found. Temporary file directory created in data directory'
+    logprint,'CONTROL: No temporary file path found.'$
+            +' Temporary file directory created in data directory'
   endif else inter_path=detectos(inter_path)
 
   im=in_image.data
@@ -639,21 +718,28 @@ function control_trace,in_image,infile,trace_type,filename
     low_range=centroid[0]-border
     high_range=centroid[0]+border
     if (cent_value le border or cent_value ge ny-border+1) then begin
-      logprint,'CONTROL_TRACE: Centroid value specified in the parameter file is close to the edge of the frame.'
-      logprint,'Press q to skip the trace and extraction for current spectrum. Press any key to continue trace and extraction for the current spectrum.'
+      logprint,'CONTROL_TRACE: Centroid value specified in the parameter file is'$
+              +' close to the edge of the frame.'
+      logprint,'Press q to skip the trace and extraction for current spectrum.'4
+              +' Press any key to continue trace and extraction for the current spectrum.'
       R = GET_KBRD()
       if R eq 'q' then begin
-        logprint,'CONTROL: Skipping the trace and extraction for current spectrum as requested by the user.'
+        logprint,'CONTROL: Skipping the trace and extraction for current spectrum as'$
+                +' requested by the user.'
         return,0
       endif else begin
-        if cent_value le border then low_range = 0 else if cent_value ge ny-border+1 then high_range = ny-1
+        if cent_value le border then low_range = 0 else if cent_value ge ny-border+1 then $
+           high_range = ny-1
       endelse
     endif
     implot=im[*,low_range:high_range]
     window,xsize=1800,ysize=600
-    cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15],xrange=[pixel[0],pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
+    cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15],xrange=[pixel[0]$
+           ,pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
     cgoplot,pixel,centroid+0.5,color='red';,yrange=[245,265]
-    cgLegend, Title=['Centroid'], LineStyle=[0], SymSize=2, Color=['red'], Location=[pixel[nx-300],centroid[0]+14],/DATA ,thick=1.5,Length=0.05, VSpace=2.0, /Box,/Background, BG_Color='white'
+    cgLegend, Title=['Centroid'], LineStyle=[0], SymSize=2, Color=['red']$
+            , Location=[pixel[nx-300],centroid[0]+14],/DATA ,thick=1.5,Length=0.05$
+            , VSpace=2.0, /Box,/Background, BG_Color='white'
     write_png,inter_path+filename+'_centroid.png',TVRD(/TRUE)
   endif else begin
     logprint,'CONTROL_TRACE: centroid not specified. Calculating on the go'
@@ -667,23 +753,29 @@ function control_trace,in_image,infile,trace_type,filename
     trace_cen=dblarr(n_elements(t_cent))
     pix=indgen(n_elements(t_cent))
     pixel=indgen(nx)
-    fit=poly_fit(pix,t_cent,degree,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror,SIGMA=sigma,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
+    fit=poly_fit(pix,t_cent,degree,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror$
+                ,SIGMA=sigma,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
     for i=0,degree do trace_cen+=fit[i]*pix^i
     centroid_full=interpol(trace_cen,pix,pixel)
     centroid=fix(centroid_full)
     y=indgen(ny)
     implot=im[*,centroid[0]-15:centroid[0]+15]
     window,xsize=1800,ysize=600
-    cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15],xrange=[pixel[0],pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
+    cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15]$
+           ,xrange=[pixel[0],pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
     cgoplot,pixel,centroid+0.5,color='red';,yrange=[245,265]
-    cgLegend, Title=['Centroid'], LineStyle=[0], SymSize=2, Color=['red'], Location=[pixel[nx-300],centroid[0]+14],/DATA ,thick=1.5,Length=0.05, VSpace=2.0, /Box,/Background, BG_Color='white'
+    cgLegend, Title=['Centroid'], LineStyle=[0], SymSize=2, Color=['red']$
+            , Location=[pixel[nx-300],centroid[0]+14],/DATA ,thick=1.5,Length=0.05$
+            , VSpace=2.0, /Box,/Background, BG_Color='white'
     write_png,inter_path+filename+'centroid.png',TVRD(/TRUE)
   endelse
 
   ;background stuff
   if tag_exist(infile,'background_trace') eq 0 then begin
-    errorlog,'CONTROL_TRACE: Background trace information is required. Please re-run the simulator with the same',logonly=1
-    message,'CONTROL_TRACE: Background trace information is required. Please re-run the simulator with the same'
+    errorlog,'CONTROL_TRACE: Background trace information is required.'$
+            +' Please re-run the simulator with the same',logonly=1
+    message,'CONTROL_TRACE: Background trace information is required.'$
+           +' Please re-run the simulator with the same'
   endif
   if (file_test(infile.background_trace)eq 0) then begin
     logprint,'CONTROL_TRACE: Background trace input is pixel deviation from centroid'
@@ -742,10 +834,17 @@ function control_trace,in_image,infile,trace_type,filename
 
   logprint,'Centroid value used is '+strtrim(string(centroid[0]),2)+' at the edge of the spectrum.'
   if datatype(slope,2) ne 0 then logprint,'Slope value used is '+strtrim(string(slope),2)+'.'
-  if datatype(width,2) ne 0 then if width gt 0 then logprint,'Width value used for extraction type simple is '+strtrim(string(width),2)+'.'
-  if datatype(fix(infile.upper),2) ne 0 then logprint,'Upper width value used for extraction type fixed is '+strtrim(string(fix(infile.upper)),2)+'.'
-  if datatype(fix(infile.lower),2) ne 0 then logprint,'Lower width value used for extraction type fixed is '+strtrim(string(fix(infile.lower)),2)+'.'
-  if datatype(double(infile.threshold),2) ne 0 then logprint,'Threshold value used for extraction type variable/function is '+strtrim(string(double(infile.threshold)),2)+'.'
+  if datatype(width,2) ne 0 then if width gt 0 then $
+    logprint,'Width value used for extraction type simple is '+strtrim(string(width),2)+'.'
+  if datatype(fix(infile.upper),2) ne 0 then $
+    logprint,'Upper width value used for extraction type fixed is '$
+            +strtrim(string(fix(infile.upper)),2)+'.'
+  if datatype(fix(infile.lower),2) ne 0 then $
+    logprint,'Lower width value used for extraction type fixed is '$
+            +strtrim(string(fix(infile.lower)),2)+'.'
+  if datatype(double(infile.threshold),2) ne 0 then $
+    logprint,'Threshold value used for extraction type variable/function is '$
+            +strtrim(string(double(infile.threshold)),2)+'.'
 
   if datatype(slope,2) eq 0 then begin
     logprint,'Slope value not found. Using default value of -9.76e-4.'
@@ -756,7 +855,8 @@ function control_trace,in_image,infile,trace_type,filename
     width=10
   endif
   if(tag_exist(infile,'centroid') eq 0) then begin
-    logprint,'Slope value not required as centroid calculated on the go and have slope information. Setting it to 0.'
+    logprint,'Slope value not required as centroid calculated on the go'$
+            +' and have slope information. Setting it to 0.'
     slope=0
   endif  
   
@@ -793,21 +893,27 @@ function control_trace,in_image,infile,trace_type,filename
       extraction = extract_func(im,error,dq,centroid,threshold,back_trace)
     end
     else :      begin
-      logprint,'CONTROL_TRACE: Invalid type input for trace: Please recheck your input',logonly=logonly
+      logprint,'CONTROL_TRACE: Invalid type input for trace: Please recheck your input'$
+              ,logonly=logonly
       message,' Invalid type input for trace: Please recheck your input'
     end
   endcase
   implot=im[*,centroid[0]-15:centroid[0]+15]
   window,xsize=1800,ysize=600
-  cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15],xrange=[pixel[0],pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
+  cgimage,implot,/AXES,/Save,yrange=[centroid[0]-15,centroid[0]+15],xrange=[pixel[0]$
+         ,pixel[nx-1]],xtitle='X pixels',ytitle='Y pixels',charsize=2.5
   cgoplot,pixel,extraction.lower,color='red';,yrange=[245,265]
   cgoplot,pixel,extraction.upper+1,color='red';,yrange=[245,265]
-  cgLegend, Title=['Trace region'], LineStyle=[0], SymSize=2, Color=['red'], Location=[pixel[nx-400],centroid[0]+14],/DATA ,thick=1.5,Length=0.05, VSpace=2.0, /Box,/Background, BG_Color='white'
+  cgLegend, Title=['Trace region'], LineStyle=[0], SymSize=2, Color=['red']$
+          , Location=[pixel[nx-400],centroid[0]+14],/DATA ,thick=1.5,Length=0.05$
+          , VSpace=2.0, /Box,/Background, BG_Color='white'
   write_png,inter_path+filename+'_trace.png',TVRD(/TRUE)
   colaps=total(im,1)
   ypix=indgen(n_elements(colaps))
   window,xsize=1300,ysize=600
-  cgplot,ypix,colaps,xrange=[min(ypix),max(ypix)],xtitle='Y pixels', Title='Approximate extraction and background region.',symsize=2,charsize=2,charthick=1.5,xthick=1.5,ythick=1.5
+  cgplot, ypix,colaps,xrange=[min(ypix),max(ypix)],xtitle='Y pixels'$
+        , Title='Approximate extraction and background region.',symsize=2,charsize=2$
+        , charthick=1.5,xthick=1.5,ythick=1.5
   extr_low=mean(extraction.lower)
   extr_hi=mean(extraction.upper)
   cgoplot,[extr_low,extr_low],[!Y.CRange[0],!Y.CRange[1]], color='red'
@@ -861,10 +967,16 @@ function control_trace,in_image,infile,trace_type,filename
     j++
   endfor
   window,xsize=1300,ysize=600
-  cgplot,pi,fl,psym=16,Color='red7',xtitle='pixels from centroid',ytitle='Flux of extracted spectrum', title='Flux and sigma variation with extraction window for spectrum in hotter continuum', YRange=[double(min(fl))-100, double(max(fl))+10000],symsize=2,charsize=2,charthick=1.5,xthick=1.5,ythick=1.5
-  cgAxis, YAxis=1,ytitle=' Sigma of extracted spectrum', YRange=[double(min(sd))-10, double(max(sd))+10],charsize=2,charthick=1.5,xthick=1.5,ythick=1.5, /Save
+  cgplot, pi,fl,psym=16,Color='red7',xtitle='pixels from centroid'$
+        , ytitle='Flux of extracted spectrum'$
+        , title='Flux and sigma variation with extraction window for spectrum in hotter continuum'$
+        , YRange=[double(min(fl))-100, double(max(fl))+10000],symsize=2,charsize=2,charthick=1.5$
+        , xthick=1.5,ythick=1.5
+  cgAxis, YAxis=1,ytitle=' Sigma of extracted spectrum', YRange=[double(min(sd))-10$
+        , double(max(sd))+10],charsize=2,charthick=1.5,xthick=1.5,ythick=1.5, /Save
   cgoplot,pi,sd,psym=16,Color='blue'
   write_png,inter_path+filename+'_pixel_vs_flux.png',TVRD(/TRUE)
-  spectrum={data:ext_data,error:ext_error,header:hdr,background:ext_bck,bck_error:ext_bck_error,dq:ext_dq,dq_bg:ext_bg_dq}
+  spectrum={data:ext_data,error:ext_error,header:hdr,background:ext_bck,bck_error:ext_bck_error,$
+            dq:ext_dq,dq_bg:ext_bg_dq}
   return,spectrum
 end

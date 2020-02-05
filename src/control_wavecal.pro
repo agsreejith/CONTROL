@@ -1,3 +1,32 @@
+; NAME:
+;      CONTROL_WAVECAL
+;
+; PURPOSE:
+;      Returns wavelength calibrated 1D spectrum.
+;      
+; CALLING SEQUENCE:
+;      spectrum = CONTROL_WAVECAL(in_image,header,infile,wavecal_type)
+;
+; INPUTS:
+;      in_image = The 1D array spectrum (in counts or flux).
+;      header   = Header assosiated with with 1D spectrum
+;      infile   = Parameter file for CONTROL
+;
+; OPTIONAL INPUTS
+;      wavecal_type = Type of wavelength calibration (simple,croscor). Default is simple.
+
+; OUTPUT:
+;      spectrum     = Created spectrum structure with wavelength solution, the 1D spectrum,
+;                     wavelength shift if any and the updated header.
+;
+; PROCEDURE:
+;      Wavelength calibration routine for CUTE;
+; MODIFICATION HISTORY:
+;      created  3.3.2019 by A. G. Sreejith
+;      modified 15.05.2019 by A. G. Sreejith
+;      modified 15.07.2019 by A. G. Sreejith
+;##################################################################################################
+
 function control_wavecal,in_image,header,infile,wavecal_type
   if N_params() LT 3 then begin             ;Need at least 4 parameters
     logprint,'Syntax - control_wavecal,in_image,infile,wavecal_type',logonly = logonly
@@ -10,15 +39,18 @@ function control_wavecal,in_image,header,infile,wavecal_type
 
 if wavecal_type ne 'simple' then crosscor=1 else crosscor=0
 if tag_exist(infile,'wavecal_file') eq 0 then begin
-  logprint,'CONTROL: Wavelength file not found. Please re-run the pipeline with the file.',logonly=logonly
+  logprint,'CONTROL: Wavelength file not found. Please re-run the pipeline with the file.'$
+          ,logonly=logonly
   message,'CONTROL: Wavelength file not found. Please re-run the pipeline with actual file.'
 endif
 wave_path=detectos(infile.wavecal_file)
 if (file_test(wave_path) eq 0) then begin
   new_wave_file=detectos('calibration/wave_cal.txt')
   if (file_test(new_wave_file) eq 0) then begin
-    logprint,'CONTROL: Wavelength file not found. Please re-run the pipeline with actual file address',logonly=logonly
-    message,'CONTROL: Wavelength file not found. Please re-run the pipeline with actual file address'
+    logprint,'CONTROL: Wavelength file not found.'$
+            +' Please re-run the pipeline with actual file address',logonly=logonly
+    message,'CONTROL: Wavelength file not found.'$
+           +' Please re-run the pipeline with actual file address'
   endif else begin
     logprint,'CONTROL: Wavelength calibration file found in calibration folder.'
     wave_path =detectos(new_wave_file)    
@@ -41,11 +73,14 @@ if crosscor eq 1 then begin
 ;      V_mag= 2.36
 ;      r_star= 7.55
       t=fix(t_star)
-      file=in_file;+'\models\t'+string(t, Format='(I05)') +'g4.4\model.flx' ;assuming folder named by their temperature and file are named as model.flx
+      file=in_file;+'\models\t'+string(t, Format='(I05)') +'g4.4\model.flx' 
+                  ;assuming folder named by their temperature and file are named as model.flx
 ;      if file_test(file) ne 1 then t = t+100 ;above 8000K the steps is 200K
-;      file=in_file+'\models\t'+string(t, Format='(I05)') +'g4.4\model.flx' ;test again to see if temperature is not in range or is in steps of 100 or 200
+;      file=in_file+'\models\t'+string(t, Format='(I05)') +'g4.4\model.flx' 
+;           ;test again to see if temperature is not in range or is in steps of 100 or 200
       if file_test(file) ne 1 then begin 
-        logprint,'Error CONTROL_WAVECAL: Model file not found.check file location or stellar temperature'
+        logprint,'Error CONTROL_WAVECAL: Model file not found.'$
+                +' Check file location or stellar temperature'
         goto,withoutcorss
       endif  
       length=file_lines(file)
@@ -59,8 +94,8 @@ if crosscor eq 1 then begin
       flux=fdata
       flux1[1,*]=(3d18*fdata[1,*])/(fdata[0,*]*fdata[0,*]) ;convert to ergs/cm2/s/A
       flux1[2,*]=(3d18*fdata[2,*])/(fdata[0,*]*fdata[0,*]) ;convert to ergs/cm2/s/A
-      flux[1,*]=flux1[1,*]*4*!pi*(r_star^2)*4*!pi ;convert to ergs/s/A second 4*!pi for steradian conversion
-      flux[2,*]=flux1[2,*]*4*!pi*(r_star^2)*4*!pi  ;convert to ergs/s/A second 4*!pi for steradian conversion
+      flux[1,*]=flux1[1,*]*4*!pi*(r_star^2)*4*!pi;convert to ergs/s/A second 4*!pi for steradian 
+      flux[2,*]=flux1[2,*]*4*!pi*(r_star^2)*4*!pi;convert to ergs/s/A second 4*!pi for steradian 
       t=double(t_star)
       t4=0.0D
       t4=t^4
@@ -87,12 +122,14 @@ if crosscor eq 1 then begin
   flux_test = input_flux
   lmin = wavelength1[10]
   lmax = wavelength1[n_elements(wavelength1)-10]
-  delta=cross_correlate(wavelength1, new_flux, wavelength1, flux_test, lmin, lmax, CCF=ccf,plot=plot)
+  delta=cross_correlate(wavelength1, new_flux, wavelength1, flux_test, lmin, lmax,$
+                        CCF=ccf,plot=plot)
   wavelength=wavelength1+delta
   wave_cal_flg=1
   wave_shift=delta
   ;print,sxpar(header,'WAVESHFT')
-  logprint,'CONTROL_WAVECAL: Wavelength calibration carried out using cross-correlation with a synthetic spectrum'
+  logprint,'CONTROL_WAVECAL: Wavelength calibration carried out using cross-correlation'$
+          +' with a synthetic spectrum'
   sxaddpar, header, 'WCAL','Cross-correlation with synthetic','Wavelength Calibration'
   sxaddpar, header, 'WAVESHFT',wave_shift, 'Wavelength Cross-correlation applied'
 endif else begin

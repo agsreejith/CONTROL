@@ -5,14 +5,15 @@
 ;      Carried out hot and bad pixel correction for CCD frames based on a hot/bad pixel map.
 ; 
 ; CALLING SEQUENCE:
-;      out= CONTROL_HOTBAD,input,map
+;      CONTROL_HOTBAD,input,map,out,type
 ;
 ; INPUTS:
 ;      input  = The frame on which hot/bad pixels are to be corrected.
-;      hbmap    =  map of cosmetic defects on the CCD as a 2-D array with the same sizes as the input CCD frame byte-type pixels (8-bit) and values of 0B for good pixels and 1B for bad onces.
+;      hbmap  = Map of cosmetic defects on the CCD as a 2-D array with the same sizes as the input
+;               CCD frame byte-type pixels (8-bit) and values of 0B for good pixels and 1B for bad.
 ;
 ; OPTIONAL OUTPUT:
-;     type = 
+;      type  = Type of correcton method, Option are interpolation and averaging. 
 ;   
 ; OUTPUT:
 ;      out    = hot/bad pixel corrected frame.
@@ -20,12 +21,12 @@
 ;     map of hot/bad pixel
 ;
 ; PROCEDURE:
-;      Master flat creator for CUTE;
+;      Hot and bad pixel corrector for CUTE;
 ; MODIFICATION HISTORY:
 ;      created 9.01.2019 by A. G. Sreejith
 ;      modified 15.01.2019 by A. G. Sreejith
 ;      modified 21.02.2019 by A. G. Sreejith
-;#######################################################################
+;#################################################################################################
 
 pro CONTROL_HOTBAD,input_file,hbmap,out,type
 
@@ -36,8 +37,10 @@ pro CONTROL_HOTBAD,input_file,hbmap,out,type
     err = '%control_hotbad: Insufficient number of parameters'
     return
   endif
-  if not keyword_defined(type) then type ='interpolate' 
+  
+  if not keyword_defined(type) then type ='interpolate' ;define default correction type.
   input=mrdfits(input_file,0,hdr,/SILENT)
+  
   ; checking the inputs
   elem= (size(input))[0]
   
@@ -45,26 +48,27 @@ pro CONTROL_HOTBAD,input_file,hbmap,out,type
     nx = (size(input))[1]
     ny = (size(input))[2]
     mnx= (size(hbmap))[1]
-    mny=  (size(hbmap))[1]
+    mny= (size(hbmap))[1]
     if not keyword_defined(hbmap) then hbmap = bytarr(nx, ny) + 1
   endif else begin
     logprint,'CONTROL_HOTBAD input file dimension error',logonly = logonly
     message,'CONTROL_HOTBAD input file dimension error'
-    
   endelse
   if nx ne mnx then begin
-    logprint,'CONTROL: Input file error, Input file:'+input_file+' and hot and bad pixel maps have different columns',logonly = logonly
-    message,'CONTROL: Input file error, Input file:'+input_file+' and hot and bad pixel maps have different columns'
-    ;sxaddpar, hdr, 'COLMNERR', 1. ;Hot and bad pixel correction flag
+    logprint,'CONTROL: Input file error, Input file:'+input_file+$
+             ' and hot and bad pixel maps have different columns',logonly = logonly
+    message,'CONTROL: Input file error, Input file:'+input_file+$
+            ' and hot and bad pixel maps have different columns'
   endif
+  
   col_data = dblarr(nx,ny)
   row_data = dblarr(nx,ny)
-     
   ycut1=SXPAR( hdr, 'YCUT1')
   ycut2=SXPAR( hdr, 'YCUT2')
   ylen=ycut2-ycut1+1
   if (ylen ne ny) then hbmap_nw=hbmap[*,ycut1:ycut1+ny-1] else hbmap_nw=hbmap[*,ycut1:ycut2]
-  ;execulte bad pixel removal row wise takes care of bad columns
+  
+  ;Execulte bad pixel removal row wise (removes bad columns as well).
   for i = 0, ny-1 do begin
     bv = where(hbmap_nw[0:nx-1, i] eq 1)
     gv = where(hbmap_nw[0:nx-1, i] eq 0)
@@ -79,7 +83,7 @@ pro CONTROL_HOTBAD,input_file,hbmap,out,type
       col_data[*,i]=datav
     endfor
 
-  ;execulte bad pixel removal column wise takes care of bad rows
+  ;Execulte bad pixel removal column wise (removes bad rows as well).
   for i = 0, nx-1 do begin
     bv = where(hbmap_nw[i,0:ny-1] eq 1)
     gv = where(hbmap_nw[i,0:ny-1] eq 0)
@@ -94,6 +98,6 @@ pro CONTROL_HOTBAD,input_file,hbmap,out,type
     row_data[i,*]=datav
   endfor
 
-  out={data:row_data,header:hdr}
- return
+  out={data:row_data,header:hdr} 
+  return
 end

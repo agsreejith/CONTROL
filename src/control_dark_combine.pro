@@ -2,20 +2,26 @@
 ;      CONTROL_DARK_COMBINE
 ;
 ; PURPOSE:
-;      Returns master bias frames from input bias files based on mean, median or mode combine as chosen by the user;
+;      Returns master bias frames from input dark files based on mean, 
+;      median or mode combine as chosen by the user
+;      
 ; CALLING SEQUENCE:
-;      CONTROL_DARK_COMBINE,dark_list,mdark,mbias_str,type=type,sat_value=sat_value,threshold=threshold
+;      CONTROL_DARK_COMBINE,dark_list,mdark,mbias_str,type=type,sat_value=sat_value$
+;                          ,threshold=threshold
 ;
 ; INPUTS:
 ;      dark_list  = The file containing the location of dark files
-;      mbias_str  = Master bias structure with the following structure im:master bias data,hdr:master bias header,dq:master bias data quality
+;      mbias_str  = Master bias structure with the following structure 
+;                   im:master bias data,hdr:master bias header,dq:master bias data quality.
 
 
 ; OPTIONAL INPUTS
-;      type      = Type of combining biases (mean, median, mode). Default is median.
+;      type      = Type of combining darks (mean, median, mode). Default is median.
 ;      sat_value = Expected saturation point for images. Default is 72000.
-;      threshold = Value specifying acceptable deviation in the frame for data quality. Default is 5. 
-;                  For example a threshold of 5 will flag all pixels whose value deviates from mean of master bias by 5 sigma.     
+;      threshold = Value specifying acceptable deviation in the frame for data quality. 
+;                  Default is 5. 
+;                  For example a threshold of 5 will flag all pixels whose value deviates from
+;                  mean of master bias by 5 sigma.     
 ; 
 ; OUTPUT:
 ;      mdark     = Created master dark image structure with image, header and data quality flag.
@@ -26,13 +32,15 @@
 ; MODIFICATION HISTORY:
 ;      created 23.12.2018 by A. G. Sreejith
 ;      modified 05.07.2019 by A. G. Sreejith
-;;#######################################################################
+;;#################################################################################################
 
 
-pro control_dark_combine,dark_list,mdark,mbias_str,type=type,sat_value=sat_value,threshold=threshold
+pro control_dark_combine,dark_list,mdark,mbias_str,type=type,sat_value=sat_value $
+                        ,threshold=threshold
 idl_ver=float(!Version.RELEASE)
   if N_params() LT 3 then begin             ;Need at least 4 parameters
-    logprint,'CONTROL_DARK_COMBINE: Syntax - control_dark_combine,dark_list,mdark,mbias_file',logonly = logonly
+    logprint,'CONTROL_DARK_COMBINE: Syntax - control_dark_combine,dark_list,mdark,mbias_file'$
+             ,logonly = logonly
     message,'CONTROL_DARK_COMBINE: Syntax - control_dark_combine,dark_list,mdark,mbias_file'
     err = '%control_dark_combine: Insufficient number of parameters'
     return
@@ -67,7 +75,8 @@ endif
     if (idl_ver ge 8) then begin
       if ISA(mbias_str) eq 0 then begin
         logprint,'CONTROL_DARK_COMBINE: Requires a master bias file'
-        logprint,'CONTROL_DARK_COMBINE: Press any key except q to create a master bias frame with zeros or press q to quit.'
+        logprint,'CONTROL_DARK_COMBINE: Press any key except q to create'$
+                 +' a master bias frame with zeros or press q to quit.'
         R = GET_KBRD()
         if R eq 'q' then begin
           logprint,'CONTROL_DARK_COMBINE: Exiting as requested by the user.',logonly = logonly
@@ -100,7 +109,8 @@ endif
       mbas_def=datatype(mbias_str,2)
       if mbas_def eq 0 then begin
         logprint,'CONTROL_DARK_COMBINE: Requires a master bias file'
-        logprint,'CONTROL_DARK_COMBINE: Press any key except q to create a master bias frame with zeros or press q to quit.'
+        logprint,'CONTROL_DARK_COMBINE: Press any key except q to create'$
+                 +' a master bias frame with zeros or press q to quit.'
         R = GET_KBRD()
         if R eq 'q' then begin
           logprint,'CONTROL_DARK_COMBINE: Exiting as requested by the user.',logonly = logonly
@@ -145,12 +155,14 @@ endif
     for i=0, n-1 do begin
       filename=dark_list[i]
       dark=mrdfits(filename,0,hdr,/SILENT)
+      ccd_gain=SXPAR( hdr, 'GAIN')
+      if ccd_gain le 0 then ccd_gain=1
       FITS_INFO, filename,N_ext =numext,/SILENT
       if numext eq 2 then dq=mrdfits(filename,1,hdr,/SILENT) else dq=bytarr(nxyd[1],nxyd[2])
       dark_nw=rejection(dark,threshold,npix)
       if npix lt limit then begin
-        dark_ar[*,*,i]=dark_nw-mbias
-        dark_err[*,*,i]= dark_nw+r^2
+        dark_ar[*,*,i]=(dark_nw-mbias)/ccd_gain
+        dark_err[*,*,i]= (dark_nw+r^2)/ccd_gain
         include[i]=i
       endif else include[i]=-1
     dq_arr+=dq
@@ -166,15 +178,18 @@ endif
       return
     endif
     if n_frames le 1 then begin
-      logprint,'CONTROL DARK COMBINE: Only one valid DARK file found. Do you wnat to assume it as the MASTER DARK?.'
-      logprint,'Press q to skip this assumption. Press any key to continue with MASTER DARK creation with one valid DARK file.'
+      logprint,'CONTROL DARK COMBINE: Only one valid DARK file found.'$
+               +' Do you wnat to assume it as the MASTER DARK?.'
+      logprint,'Press q to skip this assumption.'$
+               +' Press any key to continue with MASTER DARK creation with one valid DARK file.'
       R = GET_KBRD()
       if R eq 'q' then begin
         logprint,'CONTROL DARK COMBINE: Terminating MASTER DARK creation as requested by the user.'
         return
       endif
     endif
-     logprint,'CONTROL DARK COMBINE: Combining '+STRTRIM(STRING(n_frames),2)+' DARK file to create MASTER DARK using '+type+' method .'
+     logprint,'CONTROL DARK COMBINE: Combining '+STRTRIM(STRING(n_frames),2)$
+              +' DARK file to create MASTER DARK using '+type+' method .'
     case type of
       'median' : begin
                  if (idl_ver ge 8.3) then mdark_val = median(dark_arr,dimension=3,/even) else begin
@@ -235,7 +250,8 @@ endif
     if total(sat_loc) ne -1 then dark_dq[sat_loc]=1
     ;deviation
     std=stddev(mdark_val)
-    std_loc = where((mdark_val ge (mean(mdark_val)+threshold*std)) or (mdark_val le (mean(mdark_val)-threshold*std)))
+    std_loc = where((mdark_val ge (mean(mdark_val)+threshold*std)) or $
+                   (mdark_val le (mean(mdark_val)-threshold*std)))
     if total(std_loc) eq -1 then std_flag = 0 else std_flag = 1
     if total(sat_loc) ne -1 then dark_dq[std_loc]=1
     
@@ -252,13 +268,16 @@ endif
     sxaddpar, dhdr, 'STDFLG', std_flag
     sxaddpar, dhdr, 'MBIFLG', mbias_flag
     sxaddpar, dhdr, 'MDRFLG', mdark_flag
-    logprint,'CONTROL DARK COMBINE: Saturated (values above '+STRTRIM(STRING(sat_value),2)+') pixels and pixels that deviate by '+STRTRIM(STRING(threshold),2)+' sigma from mean of  MASTER DARK have been flaged.'
+    logprint,'CONTROL DARK COMBINE: Saturated (values above '+STRTRIM(STRING(sat_value),2)$
+             +') pixels and pixels that deviate by '+STRTRIM(STRING(threshold),2)$
+             +' sigma from mean of  MASTER DARK have been flaged.'
     mdark={im:mdark_val,error:mdark_err,hdr:dhdr,dq:dark_dq}
 
     return
   ;mwrfits,mdark,input_file+'m_bias.fits',dhdr,/create
   endif else begin
-    logprint,'CONTROL_DARK_COMBINE:Dark list is empty, exiting dark combine without creating master dark'
+    logprint,'CONTROL_DARK_COMBINE:Dark list is empty,'$
+             +' exiting dark combine without creating master dark'
     return
   endelse
 end
