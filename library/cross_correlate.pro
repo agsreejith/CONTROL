@@ -1,51 +1,72 @@
-
-
-function cross_correlate, lam_ref, flux_ref, lam_test, flux_test, lmin, lmax, CCF=ccf, GAUSS=gauss, PLOT=plot
-
-
-if n_params() lt 6 then begin
-    print, ''
-    print, ' CALLING SEQUENCE: '
-    print, ''
-    print, '   res = cross_correlate( lam_ref, flux_ref, lam_test, flux_test, lmin, lmax [,  CCF=ccf, /GAUSS, /PLOT ])'
-    print, ''
-    print, ''
-    print, '      lam/flux_ref:  lambda/flux of reference spectrum'
-    print, ''
-    print, '     lam/flux_test:  lambda/flux of test spectrum'
-    print, ''
-    print, '         lmin/lmax:  min/max wavelength for the cross-correlation'
-    print, ''
-    print, '        CCF:  Optional keyword for outputting the normalized cross correlation function'
-    print, ''
-    print, '     /GAUSS:  calculates the maximum of the cross-correlation function by a Gaussian fitting'
-    print, '              (default is by linear finite differences)'
-    print, ''
-    goto, fin
-endif
-
-
 ;
-; NAME:
+;  NAME:
 ;
-;    	CROSS_CORRELATE
+;     CROSS_CORRELATE
+;     
+;  CALLING SEQUENCE:
+;        res = cross_correlate(lam_ref, flux_ref, lam_test, flux_test, lmin, lmax, CCF=ccf, GAUSS=gauss$
+;                              ,PLOT=plot)
 ;
+;  INPUTS:
+;        lam/flux_ref  =  lambda/flux of reference spectrum
+;        lam/flux_test =  lambda/flux of test spectrum
+;        lmin/lmax     =  min/max wavelength for the cross-correlation
+;        
+;  OPTIONAL INPUTS: 
+;         GAUSS        = Calculates the maximum of the cross-correlation function by a Gaussian 
+;                        fitting (default is by linear finite differences)' 
+;             
+;  OUTPUT:
+;         res          = Apparent shift between test and reference spectrum in wavelength.
 ; 
-; PURPOSE:     
+; OPTIONAL OUTPUT:
+;        CCF           = Optional keyword for outputting the normalized cross correlation function'
 ;
-;    	Derives the normalized cross correlation function for two spectra and
-;    	calculate its maximum by Gaussian fitting or finite differences. The
-;    	location of the maximum represents the apparent shift of spectrum 1 with
-;    	respect to spectrum 2.
+
+;
+;
+; PURPOSE:
+;
+;     Derives the normalized cross correlation function for two spectra and
+;     calculate its maximum by Gaussian fitting or finite differences. The
+;     location of the maximum represents the apparent shift of spectrum 1 with
+;     respect to spectrum 2.
 ;
 ;       Based on:
 ;
 ;       http://archive.stsci.edu/iue/manual/dacguide/node78.html
 ;
 ;
+;##################################################################################################
 
 
-;--------------------------  Spectral region
+
+function cross_correlate, lam_ref, flux_ref, lam_test, flux_test, lmin, lmax, CCF=ccf, GAUSS=gauss$
+                        , PLOT=plot
+
+
+if n_params() lt 6 then begin
+    print, ''
+    print, ' CALLING SEQUENCE: '
+    print, ''
+    print, ' res = cross_correlate( lam_ref, flux_ref, lam_test, flux_test, lmin, lmax'$
+         +' [,  CCF=ccf, /GAUSS, /PLOT ])'
+    print, ''
+    print, ''
+    print, 'lam/flux_ref:  lambda/flux of reference spectrum'
+    print, ''
+    print, 'lam/flux_test:  lambda/flux of test spectrum'
+    print, ''
+    print, 'lmin/lmax:  min/max wavelength for the cross-correlation'
+    print, ''
+    print, 'CCF:  Optional keyword for outputting the normalized cross correlation function'
+    print, ''
+    print, '/GAUSS: Calculates the maximum of the cross-correlation function by a Gaussian fitting'
+    print, '              (default is by linear finite differences)'
+    print, ''
+    goto, fin
+endif
+
 
 f_st = flux_ref
 f_nd = flux_test
