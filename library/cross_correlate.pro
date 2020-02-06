@@ -41,7 +41,7 @@
 
 
 
-function cross_correlate, lam_ref, flux_ref, lam_test, flux_test, lmin, lmax, CCF=ccf, GAUSS=gauss$
+function cross_correlate, lam_ref, flux_ref, lam_test, flux_test, lmin, lmax, CCF=ccf, GAUSS=gauss $
                         , PLOT=plot
 
 
