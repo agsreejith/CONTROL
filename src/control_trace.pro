@@ -720,7 +720,7 @@ function control_trace,in_image,infile,trace_type,filename
     if (cent_value le border or cent_value ge ny-border+1) then begin
       logprint,'CONTROL_TRACE: Centroid value specified in the parameter file is'$
               +' close to the edge of the frame.'
-      logprint,'Press q to skip the trace and extraction for current spectrum.'4
+      logprint,'Press q to skip the trace and extraction for current spectrum.'$
               +' Press any key to continue trace and extraction for the current spectrum.'
       R = GET_KBRD()
       if R eq 'q' then begin
@@ -753,7 +753,7 @@ function control_trace,in_image,infile,trace_type,filename
     trace_cen=dblarr(n_elements(t_cent))
     pix=indgen(n_elements(t_cent))
     pixel=indgen(nx)
-    fit=poly_fit(pix,t_cent,degree,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror$
+    fit=poly_fit(pix,t_cent,degree,chisq=chisq,/DOUBLE, MEASURE_ERRORS=merror $
                 ,SIGMA=sigma,STATUS=status, YBAND=yband,YERROR=yerror,YFIT=yfit)
     for i=0,degree do trace_cen+=fit[i]*pix^i
     centroid_full=interpol(trace_cen,pix,pixel)

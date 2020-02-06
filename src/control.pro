@@ -1019,7 +1019,7 @@ pro control,file,help=help
       prb=where(dq_imbdf ge 1)
       if total(prb) ne -1 then dq_imbdf[prb]=1
       undefine,prb
-      if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdf.fits',dq_imbdf,hdr2$
+      if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdf.fits',dq_imbdf,hdr2 $
                                               ,/APPEND
       logprint,'CONTROL: Flat correction carried out on spectrum('+rawbc_list[i]+').'
       writefits,out_path+spectra_bname[i]+'_2d.fits',raw_imbdf,hdr
@@ -1455,9 +1455,9 @@ pro control,file,help=help
       if (file_test(flux_calib_file) eq 0) then begin
         new_flux_calib_file=detectos('calibration/flux_cal.txt')
         if (file_test(new_flux_calib_file) eq 0) then begin
-          logprint,'CONTROL: Flux calibration file not found.'
+          logprint,'CONTROL: Flux calibration file not found.'$
                    +' Please re-run the pipeline with actual file address',logonly=logonly
-          message,'CONTROL: Flux calibration file not found.'
+          message,'CONTROL: Flux calibration file not found.'$
                    +' Please re-run the pipeline with actual file address'
         endif else begin
           logprint,'CONTROL: Flux calibration file found in calibration folder.'
@@ -1471,17 +1471,17 @@ pro control,file,help=help
         goto,spectrum_loop_end
       endif else sp_wavelength=wcl_spectrum_file.wave
       if(tag_exist(wcl_spectrum_file,'counts') eq 0) then begin
-        logprint,'CONTROL: Could not find count information in FITS file specified.'
+        logprint,'CONTROL: Could not find count information in FITS file specified.'$
                  +' Pipeline procedures for this file are aborted'
         goto,spectrum_loop_end
       endif else spectra_1dw=wcl_spectrum_file.counts
       if(tag_exist(wcl_spectrum_file,'error') eq 0) then begin
-        logprint,'CONTROL: Could not find error information in FITS file specified.'
+        logprint,'CONTROL: Could not find error information in FITS file specified.'$
                  +' Pipeline procedures for this file are aborted'
         goto,spectrum_loop_end
       endif else error_1dw=wcl_spectrum_file.error
       if(tag_exist(wcl_spectrum_file,'dq') eq 0) then begin
-        logprint,'CONTROL: Could not find Data quality information in FITS file specified.'
+        logprint,'CONTROL: Could not find Data quality information in FITS file specified.'$
                  +' Pipeline procedures for this file are aborted'
         goto,spectrum_loop_end
       endif else dq_1dw=wcl_spectrum_file.dq

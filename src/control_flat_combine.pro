@@ -37,7 +37,7 @@
 ;      modified 05.07.2019 by A. G. Sreejith
 ;##################################################################################################
 
-pro control_flat_combine,flat_list,mflat,mbias_str,mdark_str,type=type,sat_value=sat_value$
+pro control_flat_combine,flat_list,mflat,mbias_str,mdark_str,type=type,sat_value=sat_value $
                         ,threshold=threshold
 idl_ver=float(!Version.RELEASE)
   if N_params() LT 4 then begin             ;Need at least 3 parameters
@@ -133,7 +133,7 @@ endif
     if (idl_ver ge 8) then begin
       if ISA(mdark_str) eq 0 then begin
         logprint,'CONTROL_FLAT_COMBINE: Requires a master dark file'
-        logprint,'CONTROL_FLAT_COMBINE: Press any key other than q to create'
+        logprint,'CONTROL_FLAT_COMBINE: Press any key other than q to create'$
                  +' a master dark frame with zeros or press q to quit.'
         R = GET_KBRD()
         if R eq 'q' then begin
