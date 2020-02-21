@@ -1,6 +1,6 @@
 ###################################################################################################
 #
-#		CONFIGURATION FILE FOR CONTROL v1.0: CUTE AUTONOMOUS DATA REDUCTION PIPELINE
+#			CONFIGURATION FILE FOR CONTROL v1.0: CUTE AUTONOMOUS DATA REDUCTION PIPELINE
 #
 #**************************************************************************************************
 #Please note: Comments and empty lines have to start with '#'. 
@@ -8,11 +8,11 @@
 # 
 #**************************************************************************************************
 #
-data_path  				    = ''
-temp_path 				    = ''
-out_path  				    = ''
-steps 	   				    = 'all'
-hb_map	   				    = ''
+data_path  				= ''
+temp_path 				= ''
+out_path  				= ''
+steps 	   				= 'all'
+hb_map	   				= ''
 #master_bias_file 		= 
 #master_dark_file 		= 
 #master_flat_file 		= 
@@ -21,25 +21,25 @@ hbpix_corection_type	= interpolate
 bias_combine_type 		= median
 dark_combine_type 		= median
 flat_combine_type 		= median
-saturation_limit		  = 72000
+saturation_limit		= 72000
 sigma_deviation   		= 5
-cosmic_ray_clip  		  = 8
+cosmic_ray_clip  		= 8
 cosmic_before_dark 		= 0
 #cent_poly_degree 		=
-trace_type				    = ''
-centroid				      = 	
-slope 					      = 
-width 					      = 		
-#upper 					      = 		
-#lower 					      = 		
-#threshold				    = 	
-background_trace 		  = ''
-wavecal_mode	 		    = ''
-wavecal_file	 		    = ''
-#temperature			    = 
-#radius					      = 
-#model_file		 		    = ''
-flux_cal			        =	''
+trace_type				= ''
+centroid				= 	
+slope 					= 
+width 					= 		
+#upper 					= 		
+#lower 					= 		
+#threshold				= 	
+background_trace 		= 
+wavecal_mode	 		= ''
+wavecal_file	 		= ''
+#temperature			= 
+#radius					= 
+#model_file		 		= ''
+flux_cal			=	 ''
 #
 #**************************************************************************************************
 #COMMENTS
