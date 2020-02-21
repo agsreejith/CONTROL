@@ -1,6 +1,6 @@
 ###################################################################################################
 #
-#			CONFIGURATION FILE FOR CONTROL v1.0: CUTE AUTONOMOUS DATA REDUCTION PIPELINE
+#		CONFIGURATION FILE FOR CONTROL v1.0: CUTE AUTONOMOUS DATA REDUCTION PIPELINE
 #
 #**************************************************************************************************
 #Please note: Comments and empty lines have to start with '#'. 
