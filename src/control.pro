@@ -17,9 +17,9 @@
 ;
 ; PROCEDURE:
 ;
-; MODIFICATION HISTORY:
-;      created 23.12.2018 by A. G. Sreejith
-;data quality implemented till trace
+;data quality implemented till lc
+;;#################################################################################################
+
 
 pro control,file,help=help
   
@@ -31,12 +31,13 @@ pro control,file,help=help
     print,'                            CUTE AUTONOMOUS DATA REDUCTION PIPELINE'
     print,''
     print,'***************************************************************************************'
-    print,' Options avaliable in configuration file'
+    print,''
     print,' This software is intented to be fully automated, aimed at producing science-quality' 
     print,' output with a single command line with zero user interference for CUTE data.'
     print,' It can be easily used for any single order spectral data in any wavelength without any'
     print,' modification.'
     print,''
+    print,' Options avaliable in configuration file'
     print,'01. Path locations: Data path, intermediate file path and output file path.'
     print,'    If data path is not provided it is assumed to be the current directory.'
     print,'    If intermediate file path and output file path are not provided they are created in'
@@ -57,7 +58,7 @@ pro control,file,help=help
     print,'    bg_sub: Subtract background from the spectrum.'
     print,'    wcalib: Do wavelength calibration.'
     print,'    fluxcalib: Do Flux calibration.'
-    print,'    light_curve: Create three light curves form the data.'
+    print,'    light_curve: Create seven light curves form the data.'
     print,'    retrieval: Process the flux and wavelength calibrated spectra to obtain transmission'
     print,'    spectra.'
     print,'    level3: Carry out all processes required for generating Level 3 data of CUTE, ie., 
@@ -433,7 +434,10 @@ pro control,file,help=help
         control_hotbad,file_list[i],mask,out,hb_type
         hdr=out.header
         out_im=out.data
-        sxaddpar, hdr, 'HBFLG', 1. ;Hot and bad pixel correction flag
+        sxaddpar, hdr, 'HBFLG', 1.,'Hot and bad pixel correction flag'
+        sxaddpar, hdr, 'HBMASK', hbmask,'Location of hot and bad pixel mask file'
+        sxaddpar, hdr, 'HBTYPE',hb_type,'Type of hot and bad pixel correction employed.
+        sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE v1.0 .',hdr,/COMMENT
         writefits,inter_path+file_names[i]+'_hb.fits',out_im,hdr ;hotbad file
         file_type[i]=SXPAR(hdr, 'FILETYPE',MISSING=-1);Find object description
       endfor
@@ -496,33 +500,33 @@ pro control,file,help=help
   endelse
   
   ;calculate readout noise and gain
-  if n_elements(biaslist) eq 0 then $
-    logprint,'CONTROL: Cannot calculate readnoise and gain without bias files.'$
-             +' These values will be read from headers of master files'$
-    else begin
-    b1=mrdfits(biaslist[0],0,hdr,/SILENT)
-    b2=mrdfits(biaslist[1],0,hdr,/SILENT)
-    if n_elements(flatlist) eq 0 then begin
-      logprint,'CONTROL: Cannot calculate gain without flat files.'$
-               +' These values will be read from headers of master files'
-      if tag_exist(infile,'master_flat_file') eq 0 then $
-        logprint,'CONTROL: No master flat file found to read gain values,'$
-                 +' reading them from bias files'
-      g_calc=SXPAR( hdr, 'CCDGAIN')
-    endif else begin
-      f1=mrdfits(flatlist[0],0,hdr,/SILENT)
-      f2=mrdfits(flatlist[1],0,hdr,/SILENT)
-      g_calc=gain(f1,f2,b1,b2)
-      g_calc=1
-    endelse
-    R=rnoise(b1,b2,g_calc)
-  endelse
-  for i=0,n_elements(biaslist)-1 do begin
-    h = headfits(biaslist[i])
-    sxaddpar,h,'RNOISE',R
-    sxaddpar,h,'CCDGAIN',g_calc
-    modfits,biaslist[i],0,h
-  endfor
+;  if n_elements(biaslist) eq 0 then $
+;    logprint,'CONTROL: Cannot calculate readnoise and gain without bias files.'$
+;             +' These values will be read from headers of master files'$
+;    else begin
+;    b1=mrdfits(biaslist[0],0,hdr,/SILENT)
+;    b2=mrdfits(biaslist[1],0,hdr,/SILENT)
+;    if n_elements(flatlist) eq 0 then begin
+;      logprint,'CONTROL: Cannot calculate gain without flat files.'$
+;               +' These values will be read from headers of master files'
+;      if tag_exist(infile,'master_flat_file') eq 0 then $
+;        logprint,'CONTROL: No master flat file found to read gain values,'$
+;                 +' reading them from bias files'
+;      g_calc=SXPAR( hdr, 'CCDGAIN')
+;    endif else begin
+;      f1=mrdfits(flatlist[0],0,hdr,/SILENT)
+;      f2=mrdfits(flatlist[1],0,hdr,/SILENT)
+;      g_calc=gain(f1,f2,b1,b2)
+;      g_calc=1
+;    endelse
+;    R=rnoise(b1,b2,g_calc)
+;  endelse
+;  for i=0,n_elements(biaslist)-1 do begin
+;    h = headfits(biaslist[i])
+;    sxaddpar,h,'RNOISE',R
+;    sxaddpar,h,'CCDGAIN',g_calc
+;    modfits,biaslist[i],0,h
+;  endfor
 
   ;bias section
   if (crmb) then begin
@@ -775,15 +779,41 @@ pro control,file,help=help
         errorlog,'CONTROL: X Dimension error with science image and bias image'
         return
       endelse
-      ;add error as well
-      sxaddpar, hdr, 'BCFLG', 1,'BIAS CORRECTION FLAG' ;bias correction flag
-      mwrfits,raw_imb,inter_path+spectra_name[i]+'_b.fits',hdr,/create
-      mwrfits,sigma_imb,inter_path+spectra_name[i]+'_b.fits',hdr
       ;data quality
       prb=where(dq_imb ge 1)
       if total(prb) ne -1 then dq_imb[prb]=1
-      undefine,prb
+      nbad=n_elements(prb)
+      dqfactr=float(nbad/n_elements(dq_imb))
+      ;headers
+      sxaddpar, hdr, 'BCFLG', 1,'BIAS CORRECTION FLAG' ;bias correction flag
+      sxaddpar, hdr, 'SIGMBIAS', SXPAR(mbias.hdr,'SIGMBIAS'), $
+                'Standard deviation of the master bias frame'
+      sxaddpar, hdr, 'MEANBIAS', SXPAR(mbias.hdr,'MEANBIAS'), $
+                'Mean value of the master bias frame'
+      sxaddpar, hdr, 'MDNBIAS ', SXPAR(mbias.hdr,'MDNBIAS'), $
+                'Median value of the master bias frame'
+      sxaddpar, hdr, 'MAXBIAS ', SXPAR(mbias.hdr,'MAXBIAS'), $
+                'Maximum value of the master bias frame'
+      sxaddpar, hdr, 'MINBIAS ', SXPAR(mbias.hdr,'MINBIAS'), $
+                'Minimum value of the master bias frame'
+      sxaddpar, hdr, 'NFRAMEMB', SXPAR(mbias.hdr,'NFRAMES'), $
+                'Number of frames used in bias combine'
+      sxaddpar, hdr, 'BIASTYP ', SXPAR(mbias.hdr,'BIASTYP'), $
+                'Type of bias combine employed'
+      sxaddpar, hdr, 'BIASSAT ', SXPAR(mbias.hdr,'BIASSAT'), $
+                'Saturation limit used in bias frames'
+      sxaddpar, hdr, 'BIASSIG ', SXPAR(mbias.hdr,'BIASSIG'), $
+                'Deviation limit for good bias frames'
+      sxaddpar, hdr, 'NBADPIX ',nbad,'Number of bad data quality pixels'
+      sxaddpar, hdr, 'DQFACTR ',dqfactr,'Number of bad data quality pixels as a'+ $
+                ' fraction of total number of pixels'
+      sxdelpar,hdr,'COMMENT'
+      sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0.',hdr,/COMMENT
+             
+      mwrfits,raw_imb,inter_path+spectra_name[i]+'_b.fits',hdr,/create
+      mwrfits,sigma_imb,inter_path+spectra_name[i]+'_b.fits',hdr
       mwrfits,dq_imb,inter_path+spectra_name[i]+'_b.fits',hdr
+      undefine,prb,nbad,dqfactr
     endfor
     rawb_list= inter_path+spectra_name+'_b.fits'
   endif else rawb_list = spectra
@@ -812,6 +842,10 @@ pro control,file,help=help
         nyc=(size(raw_imbc))[2]
         raw_imb=mrdfits(rawb_list[i],0,hdr)
         sxaddpar, hdr,'CRFLG',crflg,'COSMIC RAY CORRECTION FLAG'
+        sxaddpar, hdr,'CSRYWEN', 'before dark','When cosmic ray correction was carried out'
+        sxaddpar, hdr,'CRCYCLP', crclip,'Clip value used for cosmic ray'
+        sxdelpar, hdr,'COMMENT'
+        sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .',hdr,/COMMENT
         modfits,rawbc_list[i],0,hdr,EXTEN_NO=0
         FITS_INFO, rawb_list[i],N_ext=numext,/SILENT
         if numext gt 0 then sigma_imbc=mrdfits(rawb_list[i],1,hdr1,/SILENT) $
@@ -823,9 +857,14 @@ pro control,file,help=help
         dq_imbc[cr_loc]=1
         prb=where(dq_imbc ge 1)
         if total(prb) ne -1 then dq_imbc[prb]=1
-        undefine,prb
+        nbad=n_elements(prb)
+        dqfactr=float(nbad/n_elements(dq_imb))
+        sxaddpar, hdr, 'NBADPIX ',nbad,'Number of bad data quality pixels'
+        sxaddpar, hdr, 'DQFACTR ',dqfactr,'Number of bad data quality pixels as a'+ $
+          ' fraction of total number of pixels'
         mwrfits,sigma_imbc,rawbc_list[i],hdr
         mwrfits,dq_imbc,rawbc_list[i],hdr
+        undefine,prb,nbad,dqfactr
       endfor
       logprint,'CONTROL: Corrections carried out for cosmic rays on spectrum using LA COSMIC,'$
                +' sigma clip used is '+STRTRIM(STRING(crclip),2)+'.'
@@ -924,21 +963,48 @@ pro control,file,help=help
         errorlog,'CONTROL: X Dimension error with science image and dark image'
         return
       endelse
+      ;data quality
+      prb=where(dq_imbd ge 1)
+      if total(prb) ne -1 then dq_imbd[prb]=1
+      nbad=n_elements(prb)
+      dqfactr=float(nbad/n_elements(dq_imb))
+      ;headers
       sxaddpar, hdr, 'DCFLG', 1,'DARK CORRECTION FLAG'  ;dark correction flag
+      sxaddpar, hdr, 'SIGMDARK',SXPAR(mdark.hdr,'SIGMDARK'), $
+                'Standard deviation of the master dark frame'
+      sxaddpar, hdr, 'MEANDARK',SXPAR(mdark.hdr,'MEANDARK'), $
+                'Mean value of the master dark frame'
+      sxaddpar, hdr, 'MDNDARK ',SXPAR(mdark.hdr,'MDNDARK'), $
+                'Median value of the master dark frame'
+      sxaddpar, hdr, 'MAXDARK', SXPAR(mdark.hdr,'MAXDARK'), $
+                'Maximum value of the master dark frame'
+      sxaddpar, hdr, 'MINDARK', SXPAR(mdark.hdr,'MINDARK'), $
+                'Minimum value of the master bias frame'
+      sxaddpar, hdr, 'NFRAMEMD',SXPAR(mdark.hdr,'NFRAMES'), $
+                'Number of frames used in dark combine'
+      sxaddpar, hdr, 'DARKTYP ',SXPAR(mdark.hdr,'DARKTYP'), $
+                'Type of dark combine employed'
+      sxaddpar, hdr, 'DARKSAT ',SXPAR(mdark.hdr,'DARKSAT'), $
+                'Saturation limit used in dark frames'
+      sxaddpar, hdr, 'DARKSIG ',SXPAR(mdark.hdr,'DARKSIG'), $
+                'Deviation limit for good dark frames'
+      sxaddpar, hdr, 'NBADPIX ',nbad,'Number of bad data quality pixels'
+      sxaddpar, hdr, 'DQFACTR ',dqfactr,'Number of bad data quality pixels as a'+ $
+                ' fraction of total number of pixels'
       sxaddpar, hdr1, 'DCFLG', 1,'DARK CORRECTION FLAG'  ;dark correction flag
       sxaddpar, hdr2, 'DCFLG', 1,'DARK CORRECTION FLAG'  ;dark correction flag
+      sxdelpar, hdr,'COMMENT'
+      sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .',hdr,/COMMENT
       ;hdr_d=update_header(hdr)
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcd.fits',raw_imbd,hdr
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcd.fits',sigma_imbd,$
                                              hdr1, /APPEND
-      ;data quality
-      prb=where(dq_imbd ge 1)
-      if total(prb) ne -1 then dq_imbd[prb]=1
-      undefine,prb
+      
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcd.fits',dq_imbd,$
                                              hdr2, /APPEND
       logprint,'CONTROL: Dark correction carried out on spectrum('+spectra_name[i]+').'
       rawbd_file=inter_path+spectra_name[i]+'_bcd.fits'
+       undefine,prb,nbad,dqfactr
     endif else begin
       rawbd_file=rawbc_list[i]
       raw_imbd=raw_imbc
@@ -955,7 +1021,9 @@ pro control,file,help=help
         la_cosmic,rawbd_file,outlist=rawbdc_file,masklist=rawbd_mask,$
                   gain=ccd_gain,readn=r,sigclip=crclip ; add other parameters after testing
         crflg=1
-        sxaddpar, hdr,'CRFLG',crflg,'COSMIC RAY CORRECTION FLAG'
+        sxaddpar, hdr,'CRFLG  ', crflg,'COSMIC RAY CORRECTION FLAG'
+        sxaddpar, hdr,'CSRYWEN', 'after dark','When cosmic ray correction was carried out'
+        sxaddpar, hdr,'CRCYCLP', crclip,'Clip value used for cosmic ray'
         modfits,rawbdc_file,0,hdr,EXTEN_NO=0
         raw_imbd=mrdfits(rawbdc_file,0,crhdr,/SILENT)
         cc_mask=mrdfits(rawbd_mask,0,mask_hdr,/SILENT)
@@ -963,11 +1031,17 @@ pro control,file,help=help
         dq_imbd[cr_loc]=1
         prb=where(dq_imbd ge 1)
         if total(prb) ne -1 then dq_imbd[prb]=1
-        undefine,prb
+        nbad=n_elements(prb)
+        dqfactr=float(nbad/n_elements(dq_imb))
+        sxaddpar, hdr, 'NBADPIX ',nbad,'Number of bad data quality pixels'
+        sxaddpar, hdr, 'DQFACTR ',dqfactr,'Number of bad data quality pixels as a'+ $
+          ' fraction of total number of pixels'
+        
         if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdc.fits',sigma_imbd,$
                                                hdr1, /APPEND
         if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdc.fits',dq_imbd,$
                                                hdr2, /APPEND
+      undefine,prb,nbad,dqfactr
       endif
     endif
 
@@ -1009,16 +1083,43 @@ pro control,file,help=help
         errorlog,'CONTROL: X Dimension error with science image and flat image'
         return
       endelse
+      ;data quality
+      prb=where(dq_imbdf ge 1)
+      if total(prb) ne -1 then dq_imbdf[prb]=1
+      nbad=n_elements(prb)
+      dqfactr=float(nbad/n_elements(dq_imb))
+      ;headers
       sxaddpar, hdr, 'FCFLG', 1 ,'FLAT CORRECTION FLAG' ;flat correction flag
+      sxaddpar, hdr, 'SIGMFLAT',SXPAR(mflat.hdr,'SIGMFLAT'), $
+        'Standard deviation of the master flat frame'
+      sxaddpar, hdr, 'MEANFLAT',SXPAR(mflat.hdr,'MEANFLAT'), $
+        'Mean value of the master flat frame'
+      sxaddpar, hdr, 'MDNFLAT ',SXPAR(mflat.hdr,'MDNFLAT'), $
+        'Median value of the master dark frame'
+      sxaddpar, hdr, 'MAXFLAT', SXPAR(mflat.hdr,'MAXFLAT'), $
+        'Maximum value of the master dark frame'
+      sxaddpar, hdr, 'MINFLAT', SXPAR(mflat.hdr,'MINFLAT'), $
+        'Minimum value of the master bias frame'
+      sxaddpar, hdr, 'NFRAMEMF',SXPAR(mflat.hdr,'NFRAMES'), $
+        'Number of frames used in dark combine'
+      sxaddpar, hdr, 'FLATTYP ',SXPAR(mflat.hdr,'FLATTYP'), $
+        'Type of dark combine employed'
+      sxaddpar, hdr, 'FLATSAT ',SXPAR(mflat.hdr,'FLATSAT'), $
+        'Saturation limit used in dark frames'
+      sxaddpar, hdr, 'FLATSIG ',SXPAR(mflat.hdr,'FLATSIG'), $
+        'Deviation limit for good dark frames'
+      sxaddpar, hdr, 'NBADPIX ',nbad,'Number of bad data quality pixels'
+      sxaddpar, hdr, 'DQFACTR ',dqfactr,'Number of bad data quality pixels as a'+ $
+        ' fraction of total number of pixels'
       sxaddpar, hdr1, 'FCFLG', 1 ,'FLAT CORRECTION FLAG' ;flat correction flag
       sxaddpar, hdr2, 'FCFLG', 1 ,'FLAT CORRECTION FLAG' ;flat correction flag
-
+      sxdelpar, hdr,'COMMENT'
+      sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .',hdr,/COMMENT
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdf.fits',raw_imbdf,hdr
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdf.fits',sigma_imbdf,$
                                              hdr1, /APPEND
-      prb=where(dq_imbdf ge 1)
-      if total(prb) ne -1 then dq_imbdf[prb]=1
-      undefine,prb
+      
+      undefine,prb,nbad,dqfactr
       if save_temp_files eq 1 then writefits,inter_path+spectra_name[i]+'_bcdf.fits',dq_imbdf,hdr2 $
                                               ,/APPEND
       logprint,'CONTROL: Flat correction carried out on spectrum('+rawbc_list[i]+').'
@@ -1081,6 +1182,8 @@ pro control,file,help=help
                      bg_dq:spectrum.dq_bg}
       hdr_nw=update_header(hdr)
       ;update header
+      sxdelpar, hdr, 'NBADPIX '
+      sxdelpar, hdr, 'DQFACTR '
       sxaddpar, hdr_nw,'TTYPE1  ','data','Extracted 1D spectrum (not background corrected).'
       sxaddpar, hdr_nw,'TFORM1  ','17float','Data format of field 1'
       sxaddpar, hdr_nw,'TUNIT1  ','counts','Physical unit of field 1'
@@ -1111,16 +1214,11 @@ pro control,file,help=help
       sxaddpar, hdr_nw,'TUNIT6  ','BYTE','Physical unit of field 6'
       sxaddpar, hdr_nw,'TDISP6  ','BYTE','Display format for column 6'
       sxaddpar, hdr_nw,'TNULL6  ','0','Undefined value for column 6'
-      sxaddpar, hdr_nw,'EXTFLF',1,'Extraction flag'
+      sxdelpar, hdr_nw,'COMMENT'
+      sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .',hdr_nw,/COMMENT
       
       if save_temp_files eq 1 then mwrfits,spectrum_save,inter_path+spectra_name[i]+'_bcdfe.fits',$
                                            hdr_nw,/create
-      ;if save_temp_files eq 1 then mwrfits,spectrum.error,inter_path+spectra_name[i]+'_bcdfe.fits'$,hdr
-      ;if save_temp_files eq 1 then mwrfits,spectrum.background,inter_path+spectra_name[i]+'_bcdfe.fits',hdr
-      ;if save_temp_files eq 1 then mwrfits,spectrum.bck_error,inter_path+spectra_name[i]+'_bcdfe.fits',hdr
-      ;if save_temp_files eq 1 then mwrfits,spectrum.dq,inter_path+spectra_name[i]+'_bcdfe.fits',hdr
-      ;if save_temp_files eq 1 then mwrfits,spectrum.dq_bg,inter_path+spectra_name[i]+'_bcdfe.fits',hdr
-      ;data:spectrum_val,error:noise,bck:background,bck_error:backg_error,centroid:centroid
       logprint,'CONTROL: Spectrum('+spectra_name[i]+') is extracted.'
     endif ;else begin
     extr_read:
@@ -1133,38 +1231,45 @@ pro control,file,help=help
     ;        logprint,'Press any key to continue assuming the spectrum is corrected.'
     ;        R = GET_KBRD()
     ;        if R eq 'q' then begin
-    ;          logprint,'CONTROL: Skipping the extraction for current spectrum as requested by the user.'
+    ;          logprint,'CONTROL: Skipping the extraction for current spectrum as '$
+    ;                  +'requested by the user.'
     ;          goto,spectrum_loop_end
     ;        endif
     ;      endif
     ;      spectrum=mrdfits(rawbc_list[i],1,hdr_nw)
     ;
     ;      if(tag_exist(spectrum,'data') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find data in FITS file specified. Pipeline procedures for this file is aborted'
+    ;        logprint,'CONTROL: Could not find data in FITS file specified.'$
+    ;                +' Pipeline procedures for this file is aborted'
     ;        goto,spectrum_loop_end
     ;      endif
     ;      if(tag_exist(spectrum,'error') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find error in FITS file specified. Assuming it to be zero'
+    ;        logprint,'CONTROL: Could not find error in FITS file specified.'$
+    ;                +' Assuming it to be zero'
     ;        sp_error=dblarr(n_elements(spectrum.data))
     ;        struct_add_field, spectrum, 'error', sp_error, after='data'
     ;      endif
     ;      if(tag_exist(spectrum,'dq') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find Data quality in FITS file specified. Assuming data to be good'
+    ;        logprint,'CONTROL: Could not find Data quality in FITS file specified.'$
+    ;                +' Assuming data to be good'
     ;        sp_dq=bytarr(n_elements(spectrum.data))
     ;        struct_add_field, spectrum, 'dq', sp_dq, after='error'
     ;      endif
     ;      if(tag_exist(spectrum,'background') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find background in FITS file specified. Assuming it to be zero'
+    ;        logprint,'CONTROL: Could not find background in FITS file specified.'$
+    ;                +' Assuming it to be zero'
     ;        sp_background=dblarr(n_elements(spectrum.data))
     ;        struct_add_field, spectrum, 'background', sp_background, after='dq'
     ;      endif
     ;      if(tag_exist(spectrum,'bck_error') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find background error in FITS file specified. Assuming it to be zero'
+    ;        logprint,'CONTROL: Could not find background error in FITS file specified.'$
+    ;                +' Assuming it to be zero'
     ;        sp_backgroundr=dblarr(n_elements(spectrum.data))
     ;        struct_add_field, spectrum, 'bck_error', sp_backgroundr, after='background'
     ;      endif
     ;      if(tag_exist(spectrum,'dq_bg') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find Data qualiy for background in FITS file specified. Assuming it be all good'
+    ;        logprint,'CONTROL: Could not find Data qualiy for background in FITS file specified.'$
+    ;                +' Assuming it be all good'
     ;        sp_back_dq=dblarr(n_elements(spectrum.data))
     ;        struct_add_field, spectrum, 'dq_bg', sp_back_dq, after='bck_error'
     ;      endif
@@ -1257,7 +1362,8 @@ pro control,file,help=help
       dq_1d=spectrum.dq+spectrum.dq_bg
       prb=where(dq_1d ge 1)
       if total(prb) ne -1 then dq_1d(prb)=1
-      undefine,prb
+      nbad=n_elements(prb)
+      dqfactr=float(nbad/n_elements(dq_imb))
       if (size(dq_1d))[0] ne 1 then begin
         logprint,'CONTROL: Data quality array is not one diamensional.'$
                  +' Pipeline procedures for this file are aborted'
@@ -1282,35 +1388,46 @@ pro control,file,help=help
       sxaddpar, hdr_1d,'TUNIT3  ','bytes','Physical unit of field 3'
       sxaddpar, hdr_1d,'TDISP3  ','bytes','Display format for column 3'
       sxaddpar, hdr_1d,'TNULL3  ','0','Undefined value for column 3'
-      
+      sxaddpar, hdr_1d, 'NBADPIX ',nbad,'Number of bad data quality pixels'
+      sxaddpar, hdr_1d, 'DQFACTR ',dqfactr,'Number of bad data quality pixels as a'+ $
+        ' fraction of total number of pixels'
+      sxdelpar, hdr_1d,'COMMENT'
+      sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .',hdr_1d,/COMMENT
+        
       spectrum_file={data:spectra_1d,error:error_1d,dq:dq_1d}
       if save_temp_files eq 1 then mwrfits,spectrum_file,out_path+spectra_bname[i]+'_1d.fits',$
                                            hdr_1d,/create
-
+      undefine,prb,nbad,dqfactr
     endif ;else begin
     ;      im_bflg=fix(SXPAR(hdr_nw, 'BCFLG',MISSING=-1))
     ;      im_dflg=fix(SXPAR(hdr_nw, 'DCFLG',MISSING=-1))
     ;      im_fflg=fix(SXPAR(hdr_nw, 'FCFLG',MISSING=-1))
     ;      im_eflg=fix(SXPAR(hdr_nw, 'EXTFLF',MISSING=-1))
     ;      if (im_bflg eq -1 or im_dflg eq -1 or im_fflg eq -1 or im_eflg eq -1) then begin
-    ;        logprint,'CONTROL: The spectra('+rawbc_list[i]+') is not bias or dark or flat corrected or extracted with CONTROL.'
-    ;        logprint,'Press q to skip the background subtraction for current spectrum ('+rawbc_list[i]+'). Press any key to continue background correction for the spectrum.'
+    ;        logprint,'CONTROL: The spectra('+rawbc_list[i]+') is not bias or dark or flat'$
+    ;                +'corrected or extracted with CONTROL.'
+    ;        logprint,'Press q to skip the background subtraction for current spectrum ('$
+    ;        +rawbc_list[i]+'). Press any key to continue background correction for the spectrum.'
     ;        R = GET_KBRD()
     ;        if R eq 'q' then begin
-    ;          logprint,'CONTROL: Skipping the background subtraction for current spectrum as requested by the user.'
+    ;          logprint,'CONTROL: Skipping the background subtraction for current spectrum as'$
+    ;                  +'requested by the user.'
     ;          goto,spectrum_loop_end
     ;        endif
     ;      endif
     ;      if(tag_exist(spectrum,'data') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find data in FITS file specified. Pipeline procedures for this file is aborted'
+    ;        logprint,'CONTROL: Could not find data in FITS file specified.'$
+    ;                +' Pipeline procedures for this file is aborted'
     ;        goto,spectrum_loop_end
     ;      endif else spectra_1d=spectrum.data
     ;      if(tag_exist(spectrum,'error') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find error in FITS file specified. Pipeline procedures for this file is aborted'
+    ;        logprint,'CONTROL: Could not find error in FITS file specified.'$
+    ;                +' Pipeline procedures for this file is aborted'
     ;        goto,spectrum_loop_end
     ;      endif else error_1d=spectrum.error
     ;      if(tag_exist(spectrum,'dq') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find Data quality in FITS file specified. Assuming data to be good'
+    ;        logprint,'CONTROL: Could not find Data quality in FITS file specified.'$
+    ;                +' Assuming data to be good'
     ;        sp_dq=bytarr(n_elements(spectrum.data))
     ;        struct_add_field, spectrum, 'dq', sp_dq, after='error'
     ;      endif else dq_1d=spectrum.dq
@@ -1406,6 +1523,8 @@ pro control,file,help=help
       sxaddpar, wl_hdr,'TUNIT4  ','bytes','Physical unit of field 1'
       sxaddpar, wl_hdr,'TDISP4  ','bytes','Display format for column  3'
       sxaddpar, wl_hdr,'TNULL4  ','0','Undefined value for column  1'
+      sxdelpar, wl_hdr,'COMMENT'
+      sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0.',wl_hdr,/COMMENT
 
       mwrfits,wcl_spectrum_file,out_path+spectra_bname[i]+'_1dw.fits',wl_hdr, /CREATE
       spectra_1dw  = sp_data
@@ -1414,19 +1533,23 @@ pro control,file,help=help
     endif ;else begin
     ;      spectrum_wl=mrdfits(rawbc_list[i],1,wl_hdr)
     ;      if(tag_exist(spectrum_wl,'wave') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find wavelength information in FITS file specified. Pipeline procedures for this file is aborted'
+    ;        logprint,'CONTROL: Could not find wavelength information in FITS file specified.'$
+    ;                +'Pipeline procedures for this file is aborted'
     ;        goto,spectrum_loop_end
     ;      endif else sp_wavelength=spectrum_wl.wave
     ;      if(tag_exist(spectrum_wl,'counts') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find count information in FITS file specified. Pipeline procedures for this file is aborted'
+    ;        logprint,'CONTROL: Could not find count information in FITS file specified.'$
+    ;                +' Pipeline procedures for this file is aborted'
     ;        goto,spectrum_loop_end
     ;      endif else spectra_1dw=spectrum_wl.counts
     ;      if(tag_exist(spectrum_wl,'error') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find error information in FITS file specified. Pipeline procedures for this file is aborted'
+    ;        logprint,'CONTROL: Could not find error information in FITS file specified.'$
+    ;                +' Pipeline procedures for this file is aborted'
     ;        goto,spectrum_loop_end
     ;      endif else error_1dw=spectrum_wl.error
     ;      if(tag_exist(spectrum_wl,'dq') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find Data quality information in FITS file specified. Pipeline procedures for this file is aborted'
+    ;        logprint,'CONTROL: Could not find Data quality information in FITS file specified.'$
+    ;                +' Pipeline procedures for this file is aborted'
     ;        goto,spectrum_loop_end
     ;      endif else dq_1dw=spectrum_wl.dq
     ;
@@ -1470,11 +1593,11 @@ pro control,file,help=help
                  +' Pipeline procedures for this file are aborted'
         goto,spectrum_loop_end
       endif else sp_wavelength=wcl_spectrum_file.wave
-      if(tag_exist(wcl_spectrum_file,'counts') eq 0) then begin
+      if(tag_exist(wcl_spectrum_file,'flux') eq 0) then begin
         logprint,'CONTROL: Could not find count information in FITS file specified.'$
                  +' Pipeline procedures for this file are aborted'
         goto,spectrum_loop_end
-      endif else spectra_1dw=wcl_spectrum_file.counts
+      endif else spectra_1dw=wcl_spectrum_file.flux
       if(tag_exist(wcl_spectrum_file,'error') eq 0) then begin
         logprint,'CONTROL: Could not find error information in FITS file specified.'$
                  +' Pipeline procedures for this file are aborted'
@@ -1486,78 +1609,137 @@ pro control,file,help=help
         goto,spectrum_loop_end
       endif else dq_1dw=wcl_spectrum_file.dq
       QE=interpol(fcal_value,fcal_wave,sp_wavelength,/SPLINE)
-      spectra_1dwf=spectra_1dw*QE
-      error_1dwf=error_1dw*QE
+      exptime=double(sxpar(wl_hdr,'EXPTIME'))
+      spectra_1dwf=spectra_1dw*QE/exptime
+      error_1dwf=error_1dw*QE/exptime
       wclf_spectrum_file={wave:sp_wavelength,flux:spectra_1dwf,error:error_1dwf,dq:dq_1dw}
       window,xsize=1300,ysize=800
       cgplot,sp_wavelength,spectra_1dwf,symsize=2,charsize=2,charthick=1.5,xthick=1.5,ythick=1.5,$
-             xtitle='wavelength [$\Angstrom$]',ytitle='flux [ergs s!u-1!n cm!u-2!n $\Angstrom$!u-1!n]'
+             xtitle='wavelength [$\Angstrom$]',ytitle='flux [ergs s!u-2!n cm!u-2!n $\Angstrom$!u-1!n]'
         write_png,out_path+spectra_bname[i]+'_1dwf.png',TVRD(/TRUE)
       spectrum_hdr=update_header(wl_hdr)
-      sxaddpar, spectrum_hdr, 'FCALFLG', 1 ,'FLUX CORRECTION FLAG'
+      sxaddpar, spectrum_hdr, 'FCALFLG', 1 ,'Flux correction flag'
+      sxaddpar, spectrum_hdr, 'FCALFLE', flux_calib_file,'Location of flux response file'
       ;defininig header
-      sxaddpar, hdr,'TTYPE1  ','wave','label for field   1'
-      sxaddpar, hdr,'TFORM1  ','float','Data format of field 1'
-      sxaddpar, hdr,'TUNIT1  ','Angstroms','Physical unit of field 1'
-      sxaddpar, hdr,'TDISP1  ','float','Display format for column  3'
-      sxaddpar, hdr,'TNULL1  ','NAN','Undefined value for column  1'
-      sxaddpar, hdr,'TTYPE2  ','flux','label for field   2'
-      sxaddpar, hdr,'TFORM2  ','float','Data format of field 2'
-      sxaddpar, hdr,'TUNIT2  ','erg/s/cm**2/Angstrom','Physical unit of field 2'
-      sxaddpar, hdr,'TDISP2  ','float','Display format for column  2'
-      sxaddpar, hdr,'TNULL2  ','NAN','Undefined value for column  2'
-      sxaddpar, hdr,'TTYPE3  ','error','label for field   3'
-      sxaddpar, hdr,'TFORM3  ','float','Data format of field 3'
-      sxaddpar, hdr,'TUNIT3  ','erg/s/cm**2/Angstrom','Physical unit of field 3'
-      sxaddpar, hdr,'TDISP3  ','float','Display format for column  3'
-      sxaddpar, hdr,'TNULL3  ','NAN','Undefined value for column  3'
-      sxaddpar, hdr,'TTYPE1  ','dq','label for field   1'
-      sxaddpar, hdr,'TFORM1  ','byte','Data format of field 1'
-      sxaddpar, hdr,'TUNIT1  ','byte','Physical unit of field 1'
-      sxaddpar, hdr,'TDISP1  ','byte','Display format for column  3'
-      sxaddpar, hdr,'TNULL1  ','0','Undefined value for column  1'
+      sxaddpar, spectrum_hdr,'TTYPE1  ','wave','label for field   1'
+      sxaddpar, spectrum_hdr,'TFORM1  ','float','Data format of field 1'
+      sxaddpar, spectrum_hdr,'TUNIT1  ','Angstroms','Physical unit of field 1'
+      sxaddpar, spectrum_hdr,'TDISP1  ','float','Display format for column  3'
+      sxaddpar, spectrum_hdr,'TNULL1  ','NAN','Undefined value for column  1'
+      sxaddpar, spectrum_hdr,'TTYPE2  ','flux','label for field   2'
+      sxaddpar, spectrum_hdr,'TFORM2  ','float','Data format of field 2'
+      sxaddpar, spectrum_hdr,'TUNIT2  ','erg/cm**2/Angstrom','Physical unit of field 2'
+      sxaddpar, spectrum_hdr,'TDISP2  ','float','Display format for column  2'
+      sxaddpar, spectrum_hdr,'TNULL2  ','NAN','Undefined value for column  2'
+      sxaddpar, spectrum_hdr,'TTYPE3  ','error','label for field   3'
+      sxaddpar, spectrum_hdr,'TFORM3  ','float','Data format of field 3'
+      sxaddpar, spectrum_hdr,'TUNIT3  ','erg/cm**2/Angstrom','Physical unit of field 3'
+      sxaddpar, spectrum_hdr,'TDISP3  ','float','Display format for column  3'
+      sxaddpar, spectrum_hdr,'TNULL3  ','NAN','Undefined value for column  3'
+      sxaddpar, spectrum_hdr,'TTYPE1  ','dq','label for field   1'
+      sxaddpar, spectrum_hdr,'TFORM1  ','byte','Data format of field 1'
+      sxaddpar, spectrum_hdr,'TUNIT1  ','byte','Physical unit of field 1'
+      sxaddpar, spectrum_hdr,'TDISP1  ','byte','Display format for column  3'
+      sxaddpar, spectrum_hdr,'TNULL1  ','0','Undefined value for column  1'
+      sxdelpar, spectrum_hdr,'COMMENT'
+        sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .'$
+                 ,spectrum_hdr,/COMMENT
       mwrfits,wclf_spectrum_file,out_path+spectra_bname[i]+'_1dwf.fits',spectrum_hdr, /CREATE
     endif
-    stop
+
     spectrum_loop_end:
   endfor
 
   spectrums=file_search(out_path+'*_1dwf.fits')
   if (science ne 0) then begin
-    control_light_curve,spectrums,lightcurve,wave_region=['MgI','MgII','FeII']
-    ;
-    ;           sxaddpar, lc_hdr,'TTYPE1  ','TIME','label for field   1'
-    ;           sxaddpar, lc_hdr,'TFORM1  ',,''
-    ;           sxaddpar, lc_hdr,'TUNIT1  ','Seconds','Physical unit of field 1'
-    ;           sxaddpar, lc_hdr,'TDISP1  ',,'Display format for column  3'
-    ;           sxaddpar, lc_hdr,'TNULL1  ',,'Undefined value for column  1'
-    ;           sxaddpar, lc_hdr,'TTYPE2  ',,'FLUX'
-    ;           sxaddpar, lc_hdr,'TFORM2  ',,'Data format of field 2'
-    ;           sxaddpar, lc_hdr,'TUNIT2  ','erg/s/cm**2/Angstrom','Physical unit of field 2'
-    ;           sxaddpar, lc_hdr,'TDISP2  ',,'Display format for column  2'
-    ;           sxaddpar, lc_hdr,'TNULL2  ',,'Undefined value for column  2'
-    ;           sxaddpar, lc_hdr,'TTYPE3  ',,'FLUX ERROR'
-    ;           sxaddpar, lc_hdr,'TFORM3  ',,'Data format of field 3'
-    ;           sxaddpar, lc_hdr,'TUNIT3  ','erg/s/cm**2/Angstrom','Physical unit of field 3'
-    ;           sxaddpar, lc_hdr,'TTYPE4  ',,'FLUX'
-    ;           sxaddpar, lc_hdr,'TFORM4  ',,'Data format of field 2'
-    ;           sxaddpar, lc_hdr,'TUNIT4  ','erg/s/cm**2/Angstrom','Physical unit of field 2'
-    ;           sxaddpar, lc_hdr,'TDISP4  ',,'Display format for column  2'
-    ;           sxaddpar, lc_hdr,'TNULL4  ',,'Undefined value for column  2'
-    ;           sxaddpar, lc_hdr,'TTYPE5  ',,'FLUX ERROR'
-    ;           sxaddpar, lc_hdr,'TFORM5  ',,'Data format of field 3'
-    ;           sxaddpar, lc_hdr,'TUNIT5  ','erg/s/cm**2/Angstrom','Physical unit of field 3'
-    ;           sxaddpar, lc_hdr,'TTYPE6  ',,'FLUX'
-    ;           sxaddpar, lc_hdr,'TFORM6  ',,'Data format of field 2'
-    ;           sxaddpar, lc_hdr,'TUNIT6  ','erg/s/cm**2/Angstrom','Physical unit of field 2'
-    ;           sxaddpar, lc_hdr,'TDISP6  ',,'Display format for column  2'
-    ;           sxaddpar, lc_hdr,'TNULL6  ',,'Undefined value for column  2'
-    ;           sxaddpar, lc_hdr,'TTYPE7  ',,'FLUX ERROR'
-    ;           sxaddpar, lc_hdr,'TFORM7  ',,'Data format of field 3'
-    ;           sxaddpar, lc_hdr,'TUNIT7  ','erg/s/cm**2/Angstrom','Physical unit of field 3'
+      control_light_curve,spectrums,lightcurve,wave_region=['MgI','MgII','FeII']
+    
+      sxaddpar, lc_hdr, 'TELESCOP', SXPAR(hdr,'TELESCOP'),'Telescope name'
+      sxaddpar, lc_hdr, 'ROOTNAME', SXPAR(hdr,'ROOTNAME'),'Root directory'
+      sxaddpar, lc_hdr, 'PRGRM_ID', SXPAR(hdr,'PRGRM_ID'),'Program ID'
+      sxaddpar, lc_hdr, 'TARGT_ID', SXPAR(hdr,'TARGT_ID'),'Target ID'
+      sxaddpar, lc_hdr, 'EXP_ID  ', SXPAR(hdr,'EXP_ID'),'Exposure ID'
+      sxaddpar, lc_hdr, 'OBS_ID  ', SXPAR(hdr,'OBS_ID'),'Observation ID'
+      sxaddpar, lc_hdr, 'TTYPE1  ','TIME','label for field   1'
+      sxaddpar, lc_hdr, 'TFORM1  ','float','Data format of field 2'
+      sxaddpar, lc_hdr, 'TUNIT1  ','Julian Date','Physical unit of field 1'
+      sxaddpar, lc_hdr, 'TDISP1  ','float','Display format for column  1'
+      sxaddpar, lc_hdr, 'TNULL1  ','NAN','Undefined value for column  1'
+      sxaddpar, lc_hdr, 'TTYPE2  ','FULL_DATA','label for field   2'
+      sxaddpar, lc_hdr, 'TFORM2  ','float','Data format of field 2'
+      sxaddpar, lc_hdr, 'TUNIT2  ','erg/s/cm**2/Angstrom','Physical unit of field 2'
+      sxaddpar, lc_hdr, 'TDISP2  ','float','Display format for column  2'
+      sxaddpar, lc_hdr, 'TNULL2  ','NAN','Undefined value for column  2'
+      sxaddpar, lc_hdr, 'TTYPE2  ','FULL_ERROR','label for field   3'
+      sxaddpar, lc_hdr, 'TFORM3  ','float','Data format of field 3'
+      sxaddpar, lc_hdr, 'TUNIT3  ','erg/s/cm**2/Angstrom','Physical unit of field 3'
+      sxaddpar, lc_hdr, 'TDISP3  ','float','Display format for column  3'
+      sxaddpar, lc_hdr, 'TNULL3  ','NAN','Undefined value for column  3'
+      sxaddpar, lc_hdr, 'TTYPE4  ','SHORT_DATA','label for field   4'
+      sxaddpar, lc_hdr, 'TFORM4  ','float','Data format of field 4'
+      sxaddpar, lc_hdr, 'TUNIT4  ','erg/s/cm**2/Angstrom','Physical unit of field 4'
+      sxaddpar, lc_hdr, 'TDISP4  ','float','Display format for column  4'
+      sxaddpar, lc_hdr, 'TNULL4  ','NAN','Undefined value for column  4'
+      sxaddpar, lc_hdr, 'TTYPE5  ','SHORT_ERROR','label for field   5'
+      sxaddpar, lc_hdr, 'TFORM5  ','float','Data format of field 5'
+      sxaddpar, lc_hdr, 'TUNIT5  ','erg/s/cm**2/Angstrom','Physical unit of field 5'
+      sxaddpar, lc_hdr, 'TDISP5  ','float','Display format for column  5'
+      sxaddpar, lc_hdr, 'TNULL5  ','NAN','Undefined value for column  5'
+      sxaddpar, lc_hdr, 'TTYPE6  ','MIDDLE_DATA','label for field   6'
+      sxaddpar, lc_hdr, 'TFORM6  ','float','Data format of field 6'
+      sxaddpar, lc_hdr, 'TUNIT6  ','erg/s/cm**2/Angstrom','Physical unit of field 6'
+      sxaddpar, lc_hdr, 'TDISP6  ','float','Display format for column  6'
+      sxaddpar, lc_hdr, 'TNULL6  ','NAN','Undefined value for column  6'
+      sxaddpar, lc_hdr, 'TTYPE7  ','MIDDLE_ERROR','label for field   7'
+      sxaddpar, lc_hdr, 'TFORM7  ','float','Data format of field 7'
+      sxaddpar, lc_hdr, 'TUNIT7  ','erg/s/cm**2/Angstrom','Physical unit of field 7'
+      sxaddpar, lc_hdr, 'TDISP7  ','float','Display format for column  7'
+      sxaddpar, lc_hdr, 'TNULL7  ','NAN','Undefined value for column  7'
+      sxaddpar, lc_hdr, 'TTYPE8  ','LONG_DATA','label for field   8'
+      sxaddpar, lc_hdr, 'TFORM8  ','float','Data format of field 8'
+      sxaddpar, lc_hdr, 'TUNIT8  ','erg/s/cm**2/Angstrom','Physical unit of field 8'
+      sxaddpar, lc_hdr, 'TDISP8  ','float','Display format for column  8'
+      sxaddpar, lc_hdr, 'TNULL8  ','NAN','Undefined value for column  8'
+      sxaddpar, lc_hdr, 'TTYPE9  ','LONG_ERROR','label for field   9'
+      sxaddpar, lc_hdr, 'TFORM9  ','float','Data format of field 9'
+      sxaddpar, lc_hdr, 'TUNIT9  ','erg/s/cm**2/Angstrom','Physical unit of field 9'
+      sxaddpar, lc_hdr, 'TDISP9  ','float','Display format for column  9'
+      sxaddpar, lc_hdr, 'TNULL9  ','NAN','Undefined value for column  9'
+      sxaddpar, lc_hdr, 'TTYPE10  ','MGII_DATA','label for field   10'
+      sxaddpar, lc_hdr, 'TFORM10  ','float','Data format of field 10'
+      sxaddpar, lc_hdr, 'TUNIT10  ','erg/s/cm**2/Angstrom','Physical unit of field 10'
+      sxaddpar, lc_hdr, 'TDISP10  ','float','Display format for column  10'
+      sxaddpar, lc_hdr, 'TNULL10  ','NAN','Undefined value for column  10'
+      sxaddpar, lc_hdr, 'TTYPE11  ','MGII_ERROR','label for field   11'
+      sxaddpar, lc_hdr, 'TFORM11  ','float','Data format of field 11'
+      sxaddpar, lc_hdr, 'TUNIT11  ','erg/s/cm**2/Angstrom','Physical unit of field 11'
+      sxaddpar, lc_hdr, 'TDISP11  ','float','Display format for column  11'
+      sxaddpar, lc_hdr, 'TNULL11  ','NAN','Undefined value for column  11'
+      sxaddpar, lc_hdr, 'TTYPE12  ','MGI_DATA','label for field   12'
+      sxaddpar, lc_hdr, 'TFORM12  ','float','Data format of field 12'
+      sxaddpar, lc_hdr, 'TUNIT12  ','erg/s/cm**2/Angstrom','Physical unit of field 12'
+      sxaddpar, lc_hdr, 'TDISP12  ','float','Display format for column  12'
+      sxaddpar, lc_hdr, 'TNULL12  ','NAN','Undefined value for column  12'
+      sxaddpar, lc_hdr, 'TTYPE13  ','MGI_ERROR','label for field   13'
+      sxaddpar, lc_hdr, 'TFORM13  ','float','Data format of field 13'
+      sxaddpar, lc_hdr, 'TUNIT13  ','erg/s/cm**2/Angstrom','Physical unit of field 13'
+      sxaddpar, lc_hdr, 'TDISP13  ','float','Display format for column  13'
+      sxaddpar, lc_hdr, 'TNULL13  ','NAN','Undefined value for column  13'
+      sxaddpar, lc_hdr, 'TTYPE14  ','FEII_DATA','label for field   14'
+      sxaddpar, lc_hdr, 'TFORM14  ','float','Data format of field 14'
+      sxaddpar, lc_hdr, 'TUNIT14  ','erg/s/cm**2/Angstrom','Physical unit of field 14'
+      sxaddpar, lc_hdr, 'TDISP14  ','float','Display format for column  14'
+      sxaddpar, lc_hdr, 'TNULL14  ','NAN','Undefined value for column  14'
+      sxaddpar, lc_hdr, 'TTYPE15  ','FEII_ERROR','label for field   15'
+      sxaddpar, lc_hdr, 'TFORM15  ','float','Data format of field 15'
+      sxaddpar, lc_hdr, 'TUNIT15  ','erg/s/cm**2/Angstrom','Physical unit of field 15'
+      sxaddpar, lc_hdr, 'TDISP15  ','float','Display format for column  15'
+      sxaddpar, lc_hdr, 'TNULL15  ','NAN','Undefined value for column  15'
+      sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .'$
+                ,lc_hdr,/COMMENT
+              mwrfits,lightcurve,out_path+'light_curve.fits',lc_hdr, /CREATE
 
-    mwrfits,lightcurve,out_path+'light_curve.fits',lc_hdr, /CREATE
-
+    ;light curve plot:add here
     ;!P.Multi=[0,1,2]
     ;cgplot,tlc1,nlc1,psym=16,symsize=2,charsize=2,charthick=1.5,xthick=1.5,ythick=1.5,ERR_YLow=elc1,$
     ;ERR_YHigh=elc1,yrange=[0.93,1.03],xtitle='time',ytitle='relative flux',Label='Short wavelengths'

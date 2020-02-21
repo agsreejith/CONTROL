@@ -29,9 +29,7 @@
     
 ; PROCEDURE:
 ;      Master dark creator for CUTE;
-; MODIFICATION HISTORY:
-;      created 23.12.2018 by A. G. Sreejith
-;      modified 05.07.2019 by A. G. Sreejith
+;
 ;;#################################################################################################
 
 
@@ -182,8 +180,8 @@ endif
                +' Do you wnat to assume it as the MASTER DARK?.'
       logprint,'Press q to skip this assumption.'$
                +' Press any key to continue with MASTER DARK creation with one valid DARK file.'
-      R = GET_KBRD()
-      if R eq 'q' then begin
+      Rd = GET_KBRD()
+      if Rd eq 'q' then begin
         logprint,'CONTROL DARK COMBINE: Terminating MASTER DARK creation as requested by the user.'
         return
       endif
@@ -224,19 +222,35 @@ endif
     ;  else if type = 'mod' then mdark =median(dark_arr,dimension=3,/even,/NAN)
     ;  
     ;Header defnitions
-    t=SXPAR(hdr,'TIME_IN')
-    exptime=SXPAR(hdr,'EXP_TIME')
+    ;t=SXPAR(hdr,'TIME_IN')
+    exptime=SXPAR(hdr,'EXPTIME')
   
     r_noise=r
-    sxaddpar, dhdr, 'Time_in_JD', t
-    sxaddpar, dhdr, 'RNOISE', r_noise, 'Readout noise'
-    sxaddpar, dhdr, 'SIGMA',stddev(mdark_val,/NAN), 'Standard deviation of the frame'
-    sxaddpar, dhdr, 'MEAN', mean(mdark_val,/NAN), 'Mean value of the frame'
-    sxaddpar, dhdr, 'MEDIAN ', median(mdark_val), 'Median value of the frame'
-    sxaddpar, dhdr, 'MAX', max(mdark_val,/NAN), 'Maximum value of the frame'
-    sxaddpar, dhdr, 'MIN', min(mdark_val,/NAN), 'Minimum value of the frame'
-    sxaddpar, dhdr, 'EXPTIME', exptime, 'Exposure time of the frame'
+    sxaddpar, dhdr, 'TELESCOP', SXPAR(hdr,'TELESCOP'),'Telescope name'
+    sxaddpar, dhdr, 'ROOTNAME', SXPAR(hdr,'ROOTNAME'),'Root directory'
+    sxaddpar, dhdr, 'FILENAME', SXPAR(hdr,'FILENAME'),'Filename'
+    sxaddpar, dhdr, 'PRGRM_ID', SXPAR(hdr,'PRGRM_ID'),'Program ID'
+    sxaddpar, dhdr, 'TARGT_ID', SXPAR(hdr,'TARGT_ID'),'Target ID'
+    sxaddpar, dhdr, 'EXP_ID  ', SXPAR(hdr,'EXP_ID'),'Exposure ID'
+    sxaddpar, dhdr, 'OBS_ID  ', SXPAR(hdr,'OBS_ID'),'Observation ID'
+    sxaddpar, dhdr, 'FILETYPE', 'MDARK','Type of observation'
+    sxaddpar, dhdr, 'RNOISE  ', r_noise, 'Readout noise'
+    sxaddpar, dhdr, 'SIGMDARK', stddev(mdark_val,/NAN), 'Standard deviation of the frame'
+    sxaddpar, dhdr, 'MEANDARK', mean(mdark_val,/NAN), 'Mean value of the frame'
+    sxaddpar, dhdr, 'MDNDARK ', median(mdark_val), 'Median value of the frame'
+    sxaddpar, dhdr, 'MAXDARK ', max(mdark_val,/NAN), 'Maximum value of the frame'
+    sxaddpar, dhdr, 'MINDARK ', min(mdark_val,/NAN), 'Minimum value of the frame'
+    sxaddpar, dhdr, 'EXPTIME', exptime, 'Exposure time of the single frame'
     sxaddpar, dhdr, 'NFRAMES', n_frames, 'Number of frames used in dark combine'
+    sxaddpar, dhdr, 'DARKTYP ',type,'Type of dark combine employed'
+    sxaddpar, dhdr, 'DARKSAT ',sat_value,'Saturation limit used in dark frames'
+    sxaddpar, dhdr, 'DARKSIG ',threshold,'Deviation limit for good dark frames'
+    sxaddpar, dhdr, 'CCDGAIN ',SXPAR(hdr,'CCDGAIN'),'CCD gain'
+    sxaddpar, dhdr, 'CCDTEMP ',SXPAR(hdr,'CCDTEMP'),'CCD temperature'
+    sxaddpar, dhdr, 'TECBTEM ',SXPAR(hdr,'TECBTEM'),'TEC backside temperature'
+    sxaddpar, dhdr, 'RADTEMP ',SXPAR(hdr,'RADTEMP'),'Radiator temperature'
+    sxaddpar, dhdr, 'SHTRSTS ',SXPAR(hdr,'SHTRSTS'),'Shutter status'
+    sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .',hdr,/COMMENT
     ;checks flags that ahve to be checked
     dq_arr=dq_arr+mbdq
     prb=where(dq_arr ge 1)
@@ -264,10 +278,10 @@ endif
     if mdark_flag gt 1 then mdark_flag=1
     ;update flag headers
     ;sxaddpar, dhdr, 'CRFLG', cr_flag
-    sxaddpar, dhdr, 'SRNFLG', sat_flag
-    sxaddpar, dhdr, 'STDFLG', std_flag
-    sxaddpar, dhdr, 'MBIFLG', mbias_flag
-    sxaddpar, dhdr, 'MDRFLG', mdark_flag
+    sxaddpar, dhdr, 'SRNFLG', sat_flag,'Saturation flag'
+    sxaddpar, dhdr, 'STDFLG', std_flag,'Deviation flag'
+    sxaddpar, dhdr, 'MBIFLG', mbias_flag,'Master bias flag'
+    sxaddpar, dhdr, 'MDRFLG', mdark_flag,'Master dark flag'
     logprint,'CONTROL DARK COMBINE: Saturated (values above '+STRTRIM(STRING(sat_value),2)$
              +') pixels and pixels that deviate by '+STRTRIM(STRING(threshold),2)$
              +' sigma from mean of  MASTER DARK have been flaged.'

@@ -23,10 +23,7 @@
 ;  
 ; PROCEDURE:
 ;      Master bias creator for CUTE;
-; MODIFICATION HISTORY:
-;      created 23.12.2018 by A. G. Sreejith
-;      modified 12.03.2019 by A. G. Sreejith
-;      modified 05.07.2019 by A. G. Sreejith
+;
 ;##################################################################################################      
 
 pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold=threshold
@@ -113,8 +110,8 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
                +' Do you wnat to assume it as the MASTER BIAS?.'
       logprint,'Press q to skip this assumption.'$
                +' Press any key to continue with MASTER BIAS creation with one valid BIAS file.'
-      R = GET_KBRD()
-      if R eq 'q' then begin
+      Rd = GET_KBRD()
+      if Rd eq 'q' then begin
         logprint,'CONTROL BIAS COMBINE: Terminating MASTER BIAS creation as requested by the user.'
         return
       endif  
@@ -145,24 +142,38 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
               message,'Invalid type input for combine: Please recheck your input'
            end   
     endcase
-    ;Basic caclucation of readnoise. Now redundant
-    ;r_noise= stddev(mbias_val,/NAN)/mean(gain_val)
-    
+
   
-    t=SXPAR(hdr,'EXP_TIME')
-    r_noise=SXPAR(hdr,'RD_NOISE') 
-    if datatype(r_noise,FLAG = 2) eq 0 then r_noise=12.25
+    t=SXPAR(hdr,'EXPTIME')
+    r_noise=SXPAR(hdr,'RNOISE') 
+    if datatype(r_noise,2) eq 0 then r_noise=12.25
     
     ;Header defnitions
-    sxaddpar, bihdr, 'Time_in_JD', t
-    sxaddpar, bihdr, 'RNOISE', r_noise, 'Readout noise'
-    sxaddpar, bihdr, 'SIGMA',stddev(mbias_val,/NAN), 'Standard deviation of the frame'
-    sxaddpar, bihdr, 'MEAN', mean(mbias_val,/NAN), 'Mean value of the frame'
-    sxaddpar, bihdr, 'MEDIAN ', median(mbias_val), 'Median value of the frame'
-    sxaddpar, bihdr, 'MAX', max(mbias_val,/NAN), 'Maximum value of the frame'
-    sxaddpar, bihdr, 'MIN', min(mbias_val,/NAN), 'Minimum value of the frame'
+    ;sxaddpar, bihdr, 'Time_in_JD', t
+    sxaddpar, bihdr, 'TELESCOP', SXPAR(hdr,'TELESCOP'),'Telescope name'
+    sxaddpar, bihdr, 'ROOTNAME', SXPAR(hdr,'ROOTNAME'),'Root directory'
+    sxaddpar, bihdr, 'FILENAME', SXPAR(hdr,'FILENAME'),'Filename'
+    sxaddpar, bihdr, 'PRGRM_ID', SXPAR(hdr,'PRGRM_ID'),'Program ID'
+    sxaddpar, bihdr, 'TARGT_ID', SXPAR(hdr,'TARGT_ID'),'Target ID'
+    sxaddpar, bihdr, 'EXP_ID  ', SXPAR(hdr,'EXP_ID'),'Exposure ID'
+    sxaddpar, bihdr, 'OBS_ID  ', SXPAR(hdr,'OBS_ID'),'Observation ID'
+     sxaddpar,bihdr, 'FILETYPE', 'MBIAS','Type of observation'
+    sxaddpar, bihdr, 'RNOISE  ', r_noise, 'Readout noise'
+    sxaddpar, bihdr, 'SIGMBIAS',stddev(mbias_val,/NAN), 'Standard deviation of the frame'
+    sxaddpar, bihdr, 'MEANBIAS',mean(mbias_val,/NAN), 'Mean value of the frame'
+    sxaddpar, bihdr, 'MDNBIAS ',median(mbias_val), 'Median value of the frame'
+    sxaddpar, bihdr, 'MAXBIAS', max(mbias_val,/NAN), 'Maximum value of the frame'
+    sxaddpar, bihdr, 'MINBIAS', min(mbias_val,/NAN), 'Minimum value of the frame'
     sxaddpar, bihdr, 'NFRAMES', n_frames, 'Number of frames used in bias combine'
-    
+    sxaddpar, bihdr, 'BIASTYP ',type,'Type of bias combine employed'
+    sxaddpar, bihdr, 'BIASSAT ',sat_value,'Saturation limit used in bias frames'
+    sxaddpar, bihdr, 'BIASSIG ',threshold,'Deviation limit for good bias frames'
+    sxaddpar, bihdr, 'CCDGAIN ',SXPAR(hdr,'CCDGAIN'),'CCD gain'
+    sxaddpar, bihdr, 'CCDTEMP ',SXPAR(hdr,'CCDTEMP'),'CCD temperature'
+    sxaddpar, bihdr, 'TECBTEM ',SXPAR(hdr,'TECBTEM'),'TEC backside temperature'
+    sxaddpar, bihdr, 'RADTEMP ',SXPAR(hdr,'RADTEMP'),'Radiator temperature'
+    sxaddpar, bihdr, 'SHTRSTS ',SXPAR(hdr,'SHTRSTS'),'Shutter status'
+    sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .',hdr,/COMMENT
     ;Necessary checks
     ;Data quality
     prb=where(dq_arr ge 1)
@@ -185,16 +196,16 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
     if total(nan_loc) ne -1 then bias_dq[nan_loc]=1
 
     mbias_flag = sat_flag+std_flag+nan_flag
-    if mbias_flag gt 1 then mdark_flag=1
+    if mbias_flag ge 1 then mbias_flag=1
 
     ;Update flag in header
-    sxaddpar, bihdr, 'SRNFLG', sat_flag
-    sxaddpar, bihdr, 'STDFLG', std_flag
-    sxaddpar, bihdr, 'MBIFLG', mbias_flag
+    sxaddpar, bihdr, 'SRNFLG', sat_flag,'Saturation flag'
+    sxaddpar, bihdr, 'STDFLG', std_flag,'Deviation flag'
+    sxaddpar, bihdr, 'MBIFLG', mbias_flag,'Master bias flag'
     
-    logprint,'CONTROL BIAS COMBINE: Saturated pixels (values above '+STRTRIM(STRING(sat_value),2)+$
-             ') and pixels that deviate by '+STRTRIM(STRING(threshold),2)+$
-             ' sigma from mean of  MASTER BIAS have been flaged.'
+    logprint,'CONTROL BIAS COMBINE: Saturated pixels (values above '+STRTRIM(STRING(sat_value),2)$
+            +') and pixels that deviate by '+STRTRIM(STRING(threshold),2)$
+            +' sigma from mean of  MASTER BIAS have been flaged.'
     mbias={im:mbias_val,hdr:bihdr,dq:bias_dq}
   endelse
   return

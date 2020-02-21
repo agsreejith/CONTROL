@@ -31,10 +31,7 @@
 
 ; PROCEDURE:
 ;      Master flat creator for CUTE;
-; MODIFICATION HISTORY:
-;      created 23.12.2018 by A. G. Sreejith
-;      modified 14.01.2019 by A. G. Sreejith
-;      modified 05.07.2019 by A. G. Sreejith
+;
 ;##################################################################################################
 
 pro control_flat_combine,flat_list,mflat,mbias_str,mdark_str,type=type,sat_value=sat_value $
@@ -180,7 +177,7 @@ endif
         mdark=mdark_str.im
         mdark_flag = SXPAR( mdark_str.hdr, 'MDRFLG')
         mdark_err= mdark_str.error
-        exp_dark=sxpar(mdark_str.hdr,'exptime')
+        exp_dark=sxpar(mdark_str.hdr,'EXPTIME')
         mddq=mdark_str.dq
       endelse
     endelse  
@@ -234,8 +231,8 @@ endif
                +' Do you wnat to assume it as the MASTER FLAT?.'
       logprint,'Press q to skip this assumption.'$
                +' Press any key to continue with MASTER FLAT creation with one valid FLAT file.'
-      R = GET_KBRD()
-      if R eq 'q' then begin
+      Rd = GET_KBRD()
+      if Rd eq 'q' then begin
         logprint,'CONTROL_FLAT_COMBINE: Terminating MASTER FLAT creation as requested by the user.'
         return
       endif
@@ -284,19 +281,36 @@ endif
    ;  type eq 'med' then mflat = median(flat_arr,dimension=3,/even,/NAN)
    ;  else if type  eq 'mea' then mflat =mean(flat_arr,dimension=3,/even,/NAN)
    ;  else if type eq 'mod' then mflat =median(flat_arr,dimension=3,/even,/NAN)
-   t=SXPAR(hdr,'EXP_TIME')
+   r_noise=SXPAR(hdr,'RNOISE')
+   exptime=SXPAR(hdr,'EXPTIME')
 
    r_noise=r
    ;Header defnitions
-   sxaddpar, fhdr, 'Time_in_JD', t
-   sxaddpar, fhdr, 'RNOISE', r_noise, 'Readout noise'
-   sxaddpar, fhdr, 'SIGMA',stddev(nmflat,/NAN), 'Standard deviation of the frame'
-   sxaddpar, fhdr, 'MEAN', mean(nmflat,/NAN), 'Mean value of the frame'
-   sxaddpar, fhdr, 'MEDIAN ', median(nmflat), 'Median value of the frame'
-   sxaddpar, fhdr, 'MAX', max(nmflat,/NAN), 'Maximum value of the frame'
-   sxaddpar, fhdr, 'MIN', min(nmflat,/NAN), 'Minimum value of the frame'
+   sxaddpar, fhdr, 'TELESCOP', SXPAR(hdr,'TELESCOP'),'Telescope name'
+   sxaddpar, fhdr, 'ROOTNAME', SXPAR(hdr,'ROOTNAME'),'Root directory'
+   sxaddpar, fhdr, 'FILENAME', SXPAR(hdr,'FILENAME'),'Filename'
+   sxaddpar, fhdr, 'PRGRM_ID', SXPAR(hdr,'PRGRM_ID'),'Program ID'
+   sxaddpar, fhdr, 'TARGT_ID', SXPAR(hdr,'TARGT_ID'),'Target ID'
+   sxaddpar, fhdr, 'EXP_ID  ', SXPAR(hdr,'EXP_ID'),'Exposure ID'
+   sxaddpar, fhdr, 'OBS_ID  ', SXPAR(hdr,'OBS_ID'),'Observation ID'
+   sxaddpar, fhdr, 'FILETYPE', 'MFLAT','Type of observation'
+   sxaddpar, fhdr, 'RNOISE  ', r_noise, 'Readout noise'
+   sxaddpar, fhdr, 'SIGMFLAT', stddev(mflat_val,/NAN), 'Standard deviation of the frame'
+   sxaddpar, fhdr, 'MEANFLAT', mean(mflat_val,/NAN), 'Mean value of the frame'
+   sxaddpar, fhdr, 'MDNFLAT ', median(mflat_val), 'Median value of the frame'
+   sxaddpar, fhdr, 'MAXFLAT ', max(mflat_val,/NAN), 'Maximum value of the frame'
+   sxaddpar, fhdr, 'MINFLAT ', min(mflat_val,/NAN), 'Minimum value of the frame'
+   sxaddpar, fhdr, 'EXPTIME', exptime, 'Exposure time of the single frame'
    sxaddpar, fhdr, 'NFRAMES', n_frames, 'Number of frames used in flat combine'
-
+   sxaddpar, fhdr, 'FLATTYP ',type,'Type of flat combine employed'
+   sxaddpar, fhdr, 'FLATSAT ',sat_value,'Saturation limit used in flat frames'
+   sxaddpar, fhdr, 'FLATSIG ',threshold,'Deviation limit for good flat frames'
+   sxaddpar, fhdr, 'CCDGAIN ',SXPAR(hdr,'CCDGAIN'),'CCD gain'
+   sxaddpar, fhdr, 'CCDTEMP ',SXPAR(hdr,'CCDTEMP'),'CCD temperature'
+   sxaddpar, fhdr, 'TECBTEM ',SXPAR(hdr,'TECBTEM'),'TEC backside temperature'
+   sxaddpar, fhdr, 'RADTEMP ',SXPAR(hdr,'RADTEMP'),'Radiator temperature'
+   sxaddpar, fhdr, 'SHTRSTS ',SXPAR(hdr,'SHTRSTS'),'Shutter status'
+   sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .',hdr,/COMMENT
    ;checks flags that have to be checked
    dq_arr=dq_arr+mbdq+mddq
    prb=where(dq_arr ge 1)

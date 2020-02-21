@@ -21,10 +21,7 @@
 ;
 ; PROCEDURE:
 ;      Spectrum trace and extractor for CUTE;
-; MODIFICATION HISTORY:
-;      created 12.02.2019 by A. G. Sreejith
-;      modified 18.08.2019 by A. G. Sreejith
-;      modified 05.02.2020 by A. G. Sreejith
+;
 ;##################################################################################################
 
 
@@ -202,7 +199,7 @@ function extract_sum,im,sigma,dq,centroid,slope,upper,lower,back_trace
     upper =10
   endif
   if lower le 0 then begin
-    logprint,'Lower width specified is less than or equal to zero.'
+    logprint,'Lower width specified is less than or equal to zero.'$
             +' CONTROL will reset it to default value of 10.'
     lower =10
   endif
@@ -778,7 +775,7 @@ function control_trace,in_image,infile,trace_type,filename
            +' Please re-run the simulator with the same'
   endif
   if (file_test(infile.background_trace)eq 0) then begin
-    logprint,'CONTROL_TRACE: Background trace input is pixel deviation from centroid'
+    logprint,'CONTROL_TRACE: Background trace input is pixel deviations from centroid'
     str_bcg=strsplit(infile.background_trace,',',/EXTRACT)
     if n_elements(str_bcg) eq 1 then begin
       ushift = fix(infile.background_trace)
@@ -832,18 +829,18 @@ function control_trace,in_image,infile,trace_type,filename
   if tag_exist(infile,'threshold') eq 1 then threshold=fix(infile.threshold)
 
 
-  logprint,'Centroid value used is '+strtrim(string(centroid[0]),2)+' at the edge of the spectrum.'
+  logprint,'CONTROL_TRACE: Centroid value used is '+strtrim(string(centroid[0]),2)+' at the edge of the spectrum.'
   if datatype(slope,2) ne 0 then logprint,'Slope value used is '+strtrim(string(slope),2)+'.'
   if datatype(width,2) ne 0 then if width gt 0 then $
-    logprint,'Width value used for extraction type simple is '+strtrim(string(width),2)+'.'
-  if datatype(fix(infile.upper),2) ne 0 then $
-    logprint,'Upper width value used for extraction type fixed is '$
+    logprint,'CONTROL_TRACE: Width value used for extraction type simple is '+strtrim(string(width),2)+'.'
+  if datatype(upper,2) ne 0 then $
+    logprint,'CONTROL_TRACE: Upper width value used for extraction type fixed is '$
             +strtrim(string(fix(infile.upper)),2)+'.'
-  if datatype(fix(infile.lower),2) ne 0 then $
-    logprint,'Lower width value used for extraction type fixed is '$
+  if datatype(lower,2) ne 0 then $
+    logprint,'CONTROL_TRACE: Lower width value used for extraction type fixed is '$
             +strtrim(string(fix(infile.lower)),2)+'.'
-  if datatype(double(infile.threshold),2) ne 0 then $
-    logprint,'Threshold value used for extraction type variable/function is '$
+  if datatype(threshold,2) ne 0 then $
+    logprint,'CONTROL_TRACE: Threshold value used for extraction type variable/function is '$
             +strtrim(string(double(infile.threshold)),2)+'.'
 
   if datatype(slope,2) eq 0 then begin
@@ -866,6 +863,11 @@ function control_trace,in_image,infile,trace_type,filename
   case trace_type of
     'simple'  : begin
       extraction = extract_box(im,error,dq,centroid,slope,width,back_trace)
+      sxaddpar, hdr,'EXTRTYP', 'simple',   'Type of extraction method'
+      sxaddpar, hdr,'EXTRCNT', centroid[0],'Centroid of extraction spectrum'
+      sxaddpar, hdr,'EXTPAR1', slope,      'Extraction parameter 1'
+      sxaddpar, hdr,'EXTPAR2', width,      'Extraction parameter 2'
+      sxaddpar, hdr,'EXTPAR3', 'NA',       'Extraction parameter 3'
     end
     'fixed'   : begin
       if tag_exist(infile,'upper') eq 1 then upper=fix(infile.upper) else begin
@@ -877,6 +879,11 @@ function control_trace,in_image,infile,trace_type,filename
         lower=10
       endelse
       extraction = extract_sum(im,error,dq,centroid,slope,upper,lower,back_trace)
+      sxaddpar, hdr,'EXTRTYP', 'fixed',    'Type of extraction method'
+      sxaddpar, hdr,'EXTRCNT', centroid[0],'Centroid of extraction spectrum'
+      sxaddpar, hdr,'EXTPAR1', slope,      'Extraction parameter 1'
+      sxaddpar, hdr,'EXTPAR2', upper,      'Extraction parameter 2'
+      sxaddpar, hdr,'EXTPAR3', lower,      'Extraction parameter 3'
     end
     'variable': begin
       if tag_exist(infile,'threshold') eq 1 then threshold=double(infile.threshold) else begin
@@ -884,6 +891,11 @@ function control_trace,in_image,infile,trace_type,filename
         threshold=0.01
       endelse
       extraction = extract_varsum(im,error,dq,centroid,threshold,back_trace)
+      sxaddpar, hdr,'EXTRTYP', 'variable', 'Type of extraction method'
+      sxaddpar, hdr,'EXTRCNT', centroid[0],'Centroid of extraction spectrum'
+      sxaddpar, hdr,'EXTPAR1', threshold,  'Extraction parameter 1'
+      sxaddpar, hdr,'EXTPAR2', 'NA',       'Extraction parameter 2'
+      sxaddpar, hdr,'EXTPAR3', 'NA',       'Extraction parameter 3'
     end
     'function': begin
       if tag_exist(infile,'threshold') eq 1 then threshold=double(infile.threshold) else begin
@@ -891,6 +903,11 @@ function control_trace,in_image,infile,trace_type,filename
         threshold=0.01
       endelse
       extraction = extract_func(im,error,dq,centroid,threshold,back_trace)
+      sxaddpar, hdr,'EXTRTYP', 'function', 'Type of extraction method'
+      sxaddpar, hdr,'EXTRCNT', centroid[0],'Centroid of extraction spectrum'
+      sxaddpar, hdr,'EXTPAR1', threshold,  'Extraction parameter 1'
+      sxaddpar, hdr,'EXTPAR2', 'NA',       'Extraction parameter 2'
+      sxaddpar, hdr,'EXTPAR3', 'NA',       'Extraction parameter 3'
     end
     else :      begin
       logprint,'CONTROL_TRACE: Invalid type input for trace: Please recheck your input'$
@@ -976,6 +993,8 @@ function control_trace,in_image,infile,trace_type,filename
         , double(max(sd))+10],charsize=2,charthick=1.5,xthick=1.5,ythick=1.5, /Save
   cgoplot,pi,sd,psym=16,Color='blue'
   write_png,inter_path+filename+'_pixel_vs_flux.png',TVRD(/TRUE)
+  sxaddpar, hdr,'EXTFLF',1,'Spectrum extraction flag'
+  
   spectrum={data:ext_data,error:ext_error,header:hdr,background:ext_bck,bck_error:ext_bck_error,$
             dq:ext_dq,dq_bg:ext_bg_dq}
   return,spectrum

@@ -21,10 +21,7 @@
 ;
 ; PROCEDURE:
 ;      Wavelength calibration routine for CUTE;
-; MODIFICATION HISTORY:
-;      created  3.3.2019 by A. G. Sreejith
-;      modified 15.05.2019 by A. G. Sreejith
-;      modified 15.07.2019 by A. G. Sreejith
+;
 ;##################################################################################################
 
 function control_wavecal,in_image,header,infile,wavecal_type
@@ -138,7 +135,10 @@ endif else begin
   wavelength=wavelength1
   wave_shift=0
 endelse
-sxaddpar, header, 'WCALFLG',wave_cal_flg , 'Wavelength Calibration Flag'
+sxaddpar, header, 'WCALFLG', wave_cal_flg, 'Wavelength Calibration Flag'
+sxaddpar, header, 'WCALFLE', wave_path,    'Location of Wavelength map file
+sxaddpar, header, 'WCALTYP', wavecal_type, 'Type of wavleength calibration employed'
+sxaddpar, header, 'WLSHFT ', wave_shift,   'Calculated wavelength shift in the data
 spectrum={wavelength:wavelength,flux:in_image,wshift:wave_shift,header:header}
 ;stop
 return,spectrum

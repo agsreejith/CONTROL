@@ -21,8 +21,7 @@
 ;
 ; PROCEDURE:
 ;      Light curve creator for CUTE;
-
-
+;
 ;To Do: data quality propogation
 ;##################################################################################################
 
@@ -79,7 +78,7 @@ pro control_light_curve,file_list,lightcurve,wave_region=wave_region
     tp=trapz_error(x,y,dy)
     lc_all[1,i]=tp[0]
     lc_all[2,i]=tp[1]
-    lc_all[0,i]=double(SXPAR( spectrum_hdr, 'OBS_TIME'))
+    lc_all[0,i]=double(SXPAR( spectrum_hdr, 'JD'))
     st=0
     en=lenby3-1
     n_w=en-st+1
@@ -122,9 +121,9 @@ pro control_light_curve,file_list,lightcurve,wave_region=wave_region
     tp=trapz_error(x,y,dy)
     lc3[1,i]=tp[0]
     lc3[2,i]=tp[1]
-    lc1[0,i]=double(SXPAR( spectrum_hdr, 'OBS_TIME'))
-    lc2[0,i]=double(SXPAR( spectrum_hdr, 'OBS_TIME'))
-    lc3[0,i]=double(SXPAR( spectrum_hdr, 'OBS_TIME'))
+    lc1[0,i]=double(SXPAR( spectrum_hdr, 'JD'))
+    lc2[0,i]=double(SXPAR( spectrum_hdr, 'JD'))
+    lc3[0,i]=double(SXPAR( spectrum_hdr, 'JD'))
     if mg2 ge 0 then begin
       ;near = Min(Abs(vector - number), index)
       ;2795,2802
@@ -142,7 +141,7 @@ pro control_light_curve,file_list,lightcurve,wave_region=wave_region
       tp=trapz_error(x,y,dy)
       lc_mg2[1,i]=tp[0]
       lc_mg2[2,i]=tp[1]
-      lc_mg2[0,i]=double(SXPAR( spectrum_hdr, 'OBS_TIME'))
+      lc_mg2[0,i]=double(SXPAR( spectrum_hdr, 'JD'))
     endif
     if mg1 ge 0 then begin
       ;2852
@@ -161,7 +160,7 @@ pro control_light_curve,file_list,lightcurve,wave_region=wave_region
       tp=trapz_error(x,y,dy)
       lc_mg1[1,i]=tp[0]
       lc_mg1[2,i]=tp[1]
-      lc_mg1[0,i]=double(SXPAR( spectrum_hdr, 'OBS_TIME'))
+      lc_mg1[0,i]=double(SXPAR( spectrum_hdr, 'JD'))
     endif
     if fe2 ge 0 then begin
       ;2585
@@ -180,7 +179,7 @@ pro control_light_curve,file_list,lightcurve,wave_region=wave_region
       tp=trapz_error(x,y,dy)
       lc_fe2[1,i]=tp[0]
       lc_fe2[2,i]=tp[1]
-      lc_fe2[0,i]=double(SXPAR( spectrum_hdr, 'OBS_TIME'))
+      lc_fe2[0,i]=double(SXPAR( spectrum_hdr, 'JD'))
     endif
  endfor
 lightcurve={time:reform(lc_all[0,*]),full_data:reform(lc_all[1,*]),full_error:reform(lc_all[2,*])$

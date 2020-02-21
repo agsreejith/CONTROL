@@ -22,10 +22,7 @@
 ;
 ; PROCEDURE:
 ;      Hot and bad pixel corrector for CUTE;
-; MODIFICATION HISTORY:
-;      created 9.01.2019 by A. G. Sreejith
-;      modified 15.01.2019 by A. G. Sreejith
-;      modified 21.02.2019 by A. G. Sreejith
+;
 ;#################################################################################################
 
 pro CONTROL_HOTBAD,input_file,hbmap,out,type
