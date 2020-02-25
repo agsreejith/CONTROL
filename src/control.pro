@@ -35,7 +35,7 @@ pro control,file,help=help
     print,' This software is intented to be fully automated, aimed at producing science-quality' 
     print,' output with a single command line with zero user interference for CUTE data.'
     print,' It can be easily used for any single order spectral data in any wavelength without any'
-    print,' modification.'
+    print,' modification.' 
     print,''
     print,' Options avaliable in configuration file'
     print,'01. Path locations: Data path, intermediate file path and output file path.'
