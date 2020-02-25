@@ -19,7 +19,7 @@
 ;      spectrum     = Structure containing extracted 1D spectrum and 1D background with assosiated
 ;                     error, data quality flags and header.
 ;
-; PROCEDURE:
+; PROCEDURE: 
 ;      Spectrum trace and extractor for CUTE;
 ;
 ;##################################################################################################
