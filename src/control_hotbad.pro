@@ -21,7 +21,7 @@
 ;     map of hot/bad pixel
 ;
 ; PROCEDURE:
-;      Hot and bad pixel corrector for CUTE;
+;      Hot and bad pixel corrector for CUTE; 
 ;
 ;#################################################################################################
 
