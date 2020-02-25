@@ -62,7 +62,7 @@ endif
   endif  
   
   flat_dummy=mrdfits(flat_list[0],0,hdr,/SILENT)
-  nxy=size(flat_dummy)
+  nxy=size(flat_dummy) 
   totpix=n_elements(flat_dummy)
   dq_arr=bytarr(nxy[1],nxy[2])
   limit=0.001*totpix
