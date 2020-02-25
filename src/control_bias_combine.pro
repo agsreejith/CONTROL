@@ -113,7 +113,7 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
       Rd = GET_KBRD()
       if Rd eq 'q' then begin
         logprint,'CONTROL BIAS COMBINE: Terminating MASTER BIAS creation as requested by the user.'
-        return
+        return 
       endif  
     endif
  
