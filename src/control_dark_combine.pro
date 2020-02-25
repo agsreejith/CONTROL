@@ -49,7 +49,7 @@ idl_ver=float(!Version.RELEASE)
   endif
   if keyword_defined(sat_value) eq 0 then begin
     logprint,'CONTROL_BIAS_COMBINE: Saturation value set to default:72000'
-    sat_value = 72000
+    sat_value = 72000 
 endif
   if double(sat_value) eq 0 then begin
     logprint,'Saturation value cannot be zero setting it to default of 72000'
