@@ -22,7 +22,7 @@
 ; PROCEDURE:
 ;      Light curve creator for CUTE;
 ;
-;To Do: data quality propogation
+;To Do: data quality propogation 
 ;##################################################################################################
 
 
