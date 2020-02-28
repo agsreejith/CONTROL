@@ -28,4 +28,12 @@ The steps involved in the program execution are as follows:
  12. Wavelength calibration: Do wavelength calibration. 
  13. Flux calibration: Do flux calibration.
  14. Default Light curve: Create 7 light curves (full,short, middle,long wavelengths and three wavelength regions of choice). 
+ 
+ The pipeline is governed by a parameter file, which is available with this distribution. The pipeline can be run inside the IDL environment with the following command:
+IDL> control,'parameter_file'
+The control of the pipeline is through the parameter file and users have the option to obtain some information about these options (and general information on pipeline operations) by the command. 
+IDL> control,\help
+For more information, users can also consult the in-code documentation or the publication (ref).
+
+ 
 
