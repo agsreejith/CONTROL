@@ -35,5 +35,11 @@ The control of the pipeline is through the parameter file and users have the opt
 IDL> control,\help
 For more information, users can also consult the in-code documentation or the publication (ref).
 
+PREREQUIST
+•	IDL astronomy library: See http://idlastro.gsfc.nasa.gov/ for instructions.
+•	Coyote IDL library: See http://www.idlcoyote.com/documents/programs.php
+•	MPFIT: https://pages.physics.wisc.edu/~craigm/idl/fitting.html
+
+
  
 
