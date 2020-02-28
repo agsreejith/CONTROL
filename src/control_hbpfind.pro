@@ -20,10 +20,8 @@
 ; PROCEDURE:
 ;      Procedure to update hot and bad pixel map for CUTE 
 ;   
-; MODIFICATION HISTORY:
-;      created 22.02.2019 by A. G. Sreejith
 ;      
-;#######################################################################
+;#################################################################################################
 
 pro control_hbpfind,file_list,mask_file
 file_list=file_list
