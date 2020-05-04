@@ -33,7 +33,7 @@ The steps involved in the program execution are as follows:
 IDL> control,'parameter_file'
 The control of the pipeline is through the parameter file and users have the option to obtain some information about these options (and general information on pipeline operations) by the command. 
 IDL> control,\help
-For more information, users can also consult the in-code documentation or the publication (ref).
+For more information, users can also consult the parameter file, in-code documentation or the publication (ref).
 
 PREREQUIST
 •	IDL astronomy library: See http://idlastro.gsfc.nasa.gov/ for instructions.
