@@ -113,7 +113,7 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
       Rd = GET_KBRD()
       if Rd eq 'q' then begin
         logprint,'CONTROL BIAS COMBINE: Terminating MASTER BIAS creation as requested by the user.'
-        return 
+        return
       endif  
     endif
  
@@ -121,7 +121,7 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
              ' BIAS file to create MASTER BIAS using '+type+' method .'
     case type of
       'median':begin
-                  if (idl_ver ge 8.3) then mbias_val = median(bias_arr,dimension=3,/even) $
+                  if (idl_ver gt 5.6) then mbias_val = median(bias_arr,dimension=3,/even) $
                   else begin
                     totalImage = Total(bias_arr, 3,/NAN)
                     minValue   = Min(bias_arr, Dimension=3,/NAN)
@@ -130,7 +130,7 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
                   endelse
                 end  
       'mean' :begin
-                if (idl_ver ge 8.3) then mbias_val = mean(bias_arr,dimension=3,/NAN) $
+                if (idl_ver gt 8.0) then mbias_val = mean(bias_arr,dimension=3,/NAN) $
                 else begin
                   totalImage = Total(bias_arr, 3,/NAN)
                   mbias_val  = totalImage/n_frames

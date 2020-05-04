@@ -49,7 +49,7 @@ idl_ver=float(!Version.RELEASE)
   endif
   if keyword_defined(sat_value) eq 0 then begin
     logprint,'CONTROL_BIAS_COMBINE: Saturation value set to default:72000'
-    sat_value = 72000 
+    sat_value = 72000
 endif
   if double(sat_value) eq 0 then begin
     logprint,'Saturation value cannot be zero setting it to default of 72000'
@@ -190,7 +190,7 @@ endif
               +' DARK file to create MASTER DARK using '+type+' method .'
     case type of
       'median' : begin
-                 if (idl_ver ge 8.3) then mdark_val = median(dark_arr,dimension=3,/even) else begin
+                 if (idl_ver gt 5.6) then mdark_val = median(dark_arr,dimension=3,/even) else begin
                    totalImage = Total(dark_arr, 3,/NAN)
                    minValue = Min(dark_arr, Dimension=3,/NAN)
                    maxValue = Max(dark_arr, Dimension=3,/NAN)
@@ -200,7 +200,7 @@ endif
                  mdark_err=sqrt(sigma_db/n_frames^2)
                  end
       'mean' : begin
-               if (idl_ver ge 8.3) then mdark_val = mean(dark_arr,dimension=3,/NAN) else begin
+               if (idl_ver gt 8.0) then mdark_val = mean(dark_arr,dimension=3,/NAN) else begin
                  totalImage = Total(dark_arr, 3,/NAN)
                  mdark_val = totalImage/n_frames
                endelse

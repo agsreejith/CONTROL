@@ -62,7 +62,7 @@ endif
   endif  
   
   flat_dummy=mrdfits(flat_list[0],0,hdr,/SILENT)
-  nxy=size(flat_dummy) 
+  nxy=size(flat_dummy)
   totpix=n_elements(flat_dummy)
   dq_arr=bytarr(nxy[1],nxy[2])
   limit=0.001*totpix
@@ -242,7 +242,7 @@ endif
     
     case type of
       'median': begin
-                 if (idl_ver ge 8.3) then mflat_val = median(flat_arr,dimension=3,/even) else begin
+                 if (idl_ver gt 5.6) then mflat_val = median(flat_arr,dimension=3,/even) else begin
                    totalImage = Total(flat_arr, 3)
                    minValue = Min(flat_arr, Dimension=3)
                    maxValue = Max(flat_arr, Dimension=3)
@@ -254,7 +254,7 @@ endif
                  sigma_fbdn=mflat_err/mean(mflat_val,/NAN)
                end  
       'mean' : begin
-                if (idl_ver ge 8.3) then mflat_val = mean(flat_arr,dimension=3,/NAN) else begin
+                if (idl_ver gt 8.0) then mflat_val = mean(flat_arr,dimension=3,/NAN) else begin
                   totalImage = Total(flat_arr, 3)
                   mflat_val = totalImage/n_frames
                 endelse
