@@ -48,86 +48,91 @@ flux_cal			=	 ''
 # It can be easily used for single order spectral data in any wavelength without any modification. 
 #
 #01. Path locations: 
-#		Data path: Path location of input data.
-#		Intermediate file path (temp_path): Path location to save intermediate files produced.
-#		Output file path: Path location to save output files.  
-#		If data path is not provided it is assumed to be the current directory.
-#		If intermediate file path and output file path are not provided they are created with names
-#       temp and output respectively in the data path.
-#02. The user has the option to select individual steps during reduction. The options are as 
-#		follows:
-#		hb_correction,create_mbias,create_mdark,create_mflat,cr_bias,cr_dark,cr_flat,cr_cosmic,
+#		  Data path (data_path)             : Path location of input data.
+#		  Intermediate file path (temp_path): Path location to save intermediate files produced.
+#		  Output file path (out_path)       : Path location to save output files.  
+#		  If data path is not provided it is assumed to be the current directory.
+#		  If intermediate file path and output file path are not provided they are created with names
+#      temp and output respectively in the data path.
+#02. The user has the option to select individual/multiple steps during reduction.  
+#		  The options are as follows:
+#		    hb_correction,create_mbias,create_mdark,create_mflat,cr_bias,cr_dark,cr_flat,cr_cosmic,
 #       extract,bg_sub,wcalib,fluxcalib,light_curve,retrieval,level3,all
-#		hb_correction: Hot and bad pixel correction.
-#		create_mbias: Create master bias.
-#		create_mdark: Create master dark.
-#		create_mflat: Create master flat.
-#		cr_bias: Correct for bias in science frames.
-#		cr_dark: Correct for dark in science frames.
-#		cr_flat: Correct for flat in science frames.
-#		cr_cosmic: Correct for cosmic rays in science frames.
-#		extract: Define the trace and extract the spectrum.
-#		bg_sub: Subtract background from the spectrum.
-#		wcalib: Do wavelength calibration.
-#		fluxcalib: Do Flux calibration.
-#		light_curve: Create three light curves form the data.
-#		level3: Carry out all processes required for generating Level 3 data of CUTE, ie.,  
-#				flux and wavelength calibrated 1-D spectra. 
-#		all: Execute all the steps mentioned above. This is also the default option if steps 
-#			 keyword is absent.
-#03. Location of hot and bad pixel map. The location of the map of cosmetic defects on the CCD as
-#       a FITS file with the same size as the input CCD frame 
-#		byte-type pixels (8-bit) and values of 0B for good pixels and 1B for bad ones. 
-#04. Location of master calibration files if available.
-#		This includes locations of master bias, master dark and/or master flat frames (fits files). 
+#		  hb_correction : Hot and bad pixel correction.
+#		  create_mbias  : Create master bias.
+#		  create_mdark  : Create master dark.
+#		  create_mflat  : Create master flat.
+#		  cr_bias       : Correct for bias in science frames.
+#		  cr_dark       : Correct for dark in science frames.
+#		  cr_flat       : Correct for flat in science frames.
+#		  cr_cosmic     : Correct for cosmic rays in science frames.
+#		  extract       : Define the trace and extract the spectrum.
+#		  bg_sub        : Subtract background from the spectrum.
+#		  wcalib        : Do wavelength calibration.
+#		  fluxcalib     : Do Flux calibration.
+#		  light_curve   : Create three light curves form the data.
+#		  level3        : Carry out all processes required for generating Level 3 data of CUTE, ie.,  
+#				             flux and wavelength calibrated 1-D spectra. 
+#		  all           : Execute all the steps mentioned above. This is also the default option if steps 
+#			               keyword is absent.
+#     Example of usage, steps ='cr_bias,cr_cosmic,extract' will carry out only bias correction, 
+#     cosmic ray correction and extraction.
+#03. Location of hot and bad pixel map (hb_map): The location of the map of cosmetic defects 
+#     on the CCD as a FITS file with the same size as the input CCD frame with byte-type pixels (8-bit)
+#     and values of 0B for good pixels and 1B for bad ones. 
+#04. Location of master calibration files if available :This includes locations of master bias, 
+#     master dark and/or master flat frames (fits files) (master_bias_file, master_dark_file, 
+#     master_flat_file). 
 #05. Set save_temp_files equal to 1 if you need all the intermediate files to be saved to the 
-#		intermediate file directory.
+#		  intermediate file directory.
 #06. Option for Hot and bad pixel correction
-#		hbpix_corection_type: Hot and bad pixel correction can be made by interpolation or by 
-#		averaging options for type are interpolate or average 
+#		  hbpix_corection_type: Hot and bad pixel correction can be made by interpolation or by 
+#		  averaging. Options are interpolate or average 
 #07. Options for master file creation.
-#		Statistical method to create master files. Options are: 'median', 'mean' or 'mode'
-#		Threshold for rejection of pixels: sigma_deviation 
-#		(how many sigma's from mean value of the frame).
-#		Saturation_level sets the saturation limit of CCD. If not set default of 72000 is used.	
-#08. Cosmic Ray correction options: Level of cosmic ray clipping for LA cosmic algorithm. 
-#		Default value set by the code is 8. 
-#		Set cosmic_before_dark to 1 to carryout cosmic ray correction before dark correction, 
-#		default is to carryout cosmic ray correction after dark correction.		
+#		  Statistical method to create master files
+#      (bias_combine_type, dark_combine_type, flat_combine_type)
+#      Options are: 'median', 'mean' or 'mode'
+#		  Threshold for rejection of pixels: sigma_deviation 
+#		   (how many sigma's from mean value of the frame).
+#		  saturation_limit sets the saturation limit of CCD. If not set default of 72000 is used.	
+#08. Cosmic Ray correction options: 
+#     cosmic_ray_clip: Level of cosmic ray clipping for LA cosmic algorithm. 
+#		   Default value set by the code is 8. 
+#		  cosmic_before_dark: Set to 1 to carryout cosmic ray correction before dark correction, 
+#		   default is to carryout cosmic ray correction after dark correction.		
 #09. Trace parameters
-#		Degree for centroid polynomial: Default is 1.
-#		Trace type used for extraction. The options are: 'simple','fixed','variable','function'. 
-#		For details of these options refer to the manual.
-#		Additional parameters required for different trace options:
-#			centroid  : Centroid will be calculated if not provided
-#			slope	  : Required for option: simple and fixed, defines the slope of the spectrum 
-#			width 	  : Required for option: simple, which defines the width of the spectrum 
-#			upper 	  : Required for option: fixed, which defines the upper width of the spectrum 
-#			lower 	  : Required for option: fixed, which defines the lower width of the spectrum 
-#			threshold :	Required for option: variable or function, which defines the threshold from
-#											 the maximum/peak of the spectrum. 
-#		 Background trace: File location for information of where to extract background. 
-#						   The user could also provide it as numbers corresponding to the shift in 
-#                          pixels from centroid. 
-#		 Eg of usage: If only one number is provided the background for eg.,'x', 
+#		  Degree for centroid polynomial (cent_poly_degree): Default is 1.
+#		  Trace type used for extraction. The options are: 'simple','fixed','variable','function'. 
+#		  For details of these options refer to the manual.
+#		  Additional parameters required for different trace options:
+#			 centroid  : Centroid will be calculated if not provided
+#			 slope	   : Required for option: simple and fixed, defines the slope of the spectrum 
+#			 width 	   : Required for option: simple, which defines the width of the spectrum 
+#			 upper 	   : Required for option: fixed, which defines the upper width of the spectrum 
+#			 lower 	   : Required for option: fixed, which defines the lower width of the spectrum 
+#			 threshold : Required for option: variable or function, which defines the threshold from
+#											                  the maximum/peak of the spectrum. 
+#		   background_trace: shift in pixels from centroid for background extraction.
+#       The user could also provide it as a file location with information of where to extract 
+#       background. 
+#		    eg of usage: If only one number is provided the background for eg.,'x', 
 #                     Background is extracted similar to spectrum with the centroid of the 
 #                     background as spectrum_centroid+x and spectrum_centroid-x. If multiple 
 #                     numbers are specified as 'x,y,-z' the background spectrum is extracted 
 #                     along the pixels spectrum_centroid+x, spectrum_centroid+y,spectrum_centroid-z 
-#		              and scaled to spectrum extrazion size.   
+#		                  and scaled to spectrum extrazion size.   
 #10. Wavelength calibration variables
-#		Type of wavelength calibration required: Options are 'simple' and 'crscor'
-#		Location of wavelength file. A text file with length equal to number of pixels in dispersion
-#       direction representing wavelength to pixel mapping.
-#		For cross-correlation, A location a two column model file of wavelength vs flux should be
+#		  Type of wavelength calibration required (wavecal_mode): Options are 'simple' and 'crscor'
+#		  Location of wavelength file (wavecal_file): A text file with length equal to number of pixels 
+#      in dispersion direction representing wavelength to pixel mapping.
+#		  For cross-correlation, A location a two column model file of wavelength vs flux should be
 #       provided as model_file. 
-#		Another option is to provide the location of synthetic spectrum library. CONTROL assumes 
-#       that folder are named by their temperature and file are named as model.flx. 
-#		The second  option would require the user to provide stellar parameters like temperature and
-#		radius. 
-#       Required only for the option crscor so as to compare with a model data. 
+#		  Another option is to provide the location of synthetic spectrum library. CONTROL assumes 
+#      that folder are named by their temperature and file are named as model.flx. 
+#		   This option would require the user to provide stellar parameters like temperature and
+#		   radius. Required only for the option crscor so as to compare with a model data. 
 #11. Flux calibration variables
-#		Location of flux calibration file which provides wavelength vs response relation.
+#		  Location of flux calibration file which provides wavelength vs response relation (flux_cal).
 #
 #**************************************************************************************************
 # The program works in a series of steps following standard CCD reduction techniques user can also 
