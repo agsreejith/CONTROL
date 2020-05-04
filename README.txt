@@ -40,6 +40,8 @@ PREREQUIST
 •	Coyote IDL library: See http://www.idlcoyote.com/documents/programs.php
 •	MPFIT: https://pages.physics.wisc.edu/~craigm/idl/fitting.html
 
+The file structure of this distribution is as follows, 
+src folder contain the source code of the software, library consist of third party codes not specified in the prerequists that are required, input folder contains the parameter file and some sample input files. 
 
  
 
