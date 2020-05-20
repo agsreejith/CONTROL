@@ -1360,7 +1360,7 @@ spectrum_loop_end:
  
  spectrums=file_search(out_path+'*_1dwf.fits')
  if (science ne 0) then begin
- cute_light_curve,spectrums,lightcurve,wave_region=['MgI','MgII','FeII']
+ control_light_curve,spectrums,lightcurve,wave_region=['MgI','MgII','FeII']
 ;
 ;           sxaddpar, lc_hdr,'TTYPE1  ','TIME','label for field   1'
 ;           sxaddpar, lc_hdr,'TFORM1  ',,''
