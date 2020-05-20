@@ -743,11 +743,14 @@ if tag_exist(infile,'threshold') eq 1 then threshold=fix(infile.threshold)
 
 logprint,'Centroid value used is '+strtrim(string(centroid[0]),2)+' at the edge of the spectrum.'
 if datatype(slope,2) ne 0 then logprint,'Slope value used is '+strtrim(string(slope),2)+'.'
-if datatype(width,2) ne 0 then if width gt 0 then logprint,'Width value used for extraction type simple is '+strtrim(string(width),2)+'.'
-if datatype(fix(infile.upper),2) ne 0 then logprint,'Upper width value used for extraction type fixed is '+strtrim(string(fix(infile.upper)),2)+'.'
-if datatype(fix(infile.lower),2) ne 0 then logprint,'Lower width value used for extraction type fixed is '+strtrim(string(fix(infile.lower)),2)+'.'
-if datatype(double(infile.threshold),2) ne 0 then logprint,'Threshold value used for extraction type variable/function is '+strtrim(string(double(infile.threshold)),2)+'.'
-
+if datatype(width,2) ne 0 then if width gt 0 then logprint, $
+    'Width value used for extraction type simple is '+strtrim(string(width),2)+'.'
+if datatype(upper,2) ne 0 then logprint, $
+    'Upper width value used for extraction type fixed is '+strtrim(string(fix(infile.upper)),2)+'.'
+if datatype(lower,2) ne 0 then logprint, $
+    'Lower width value used for extraction type fixed is '+strtrim(string(fix(infile.lower)),2)+'.'
+if datatype(threshold,2) ne 0 then logprint, $
+    'Threshold value used for extraction type variable/function is '+strtrim(string(double(infile.threshold)),2)+'.'
 if datatype(slope,2) eq 0 then begin
   logprint,'Slope value not found. Using default value of -9.76e-4.'
   slope=-9.76e-4
