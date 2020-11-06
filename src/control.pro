@@ -758,7 +758,11 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
     if numext gt 1 then dq_imbc=mrdfits(rawbc_list[i],2,hdr2,/SILENT)  else dq_imbc=bytarr(bnx,bny)
     if n_elements(dq_imbc) eq 1 then dq_imbc=dblarr(bnx,bny)
     if datatype(r,2) eq 0 then r=12.25
-    sigma_imbc=sqrt(raw_imbc+r^2)
+    if crb eq 0 then begin
+      ccd_gain=SXPAR( hdr, 'GAIN')
+      raw_imbc= raw_imbc/ccd_gain
+      sigma_imbc=sqrt(raw_imbc+r^2)
+    endif
     if (SXPAR(hdr, 'DCFLG',MISSING=-1)) ne -1 then begin
       dcfg_chk=SXPAR(hdr, 'DCFLG',MISSING=-1)
       if dcfg_chk eq 1 then begin
