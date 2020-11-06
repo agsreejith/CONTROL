@@ -209,7 +209,7 @@ endif
         flat_nw=rejection(flat,threshold,npix) ; interpolate pixels that have 5 sigma variations  
         if npix lt limit then begin
           flat_ar[*,*,i]=((flat_nw-mbias)/ccd_gain)-mdark
-          rs_fb=sqrt(flat+r^2)/ccd_gain
+          rs_fb=sqrt(flat/ccd_gain)+r^2
           flat_er[*,*,i]=rs_fb +(mdark_err/exp_dark)^2
           include[i]=i
         endif else include[i]=-1
