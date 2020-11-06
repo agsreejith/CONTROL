@@ -638,6 +638,7 @@ if dpflg eq 1 then errorlog,'CONTROL: No data file path found. Data files assume
       ycut2=SXPAR( hdr, 'YCUT2')
       ylen=ycut2-ycut1+1
       ccd_gain=SXPAR( hdr, 'GAIN')
+      raw_im=raw_im/ccd_gain
       r=float(SXPAR( mbias.hdr, 'RNOISE'))
       if nx eq mnx then begin
         if ny eq mny then begin
