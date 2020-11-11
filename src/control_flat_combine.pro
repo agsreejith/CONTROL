@@ -208,7 +208,7 @@ endif
         if numext eq 2 then dq=mrdfits(filename,1,hdr,/SILENT) else dq=bytarr(nxy[1],nxy[2])
         flat_nw=rejection(flat,threshold,npix) ; interpolate pixels that have 5 sigma variations  
         if npix lt limit then begin
-          flat_ar[*,*,i]=((flat_nw-mbias)/ccd_gain)-mdark
+          flat_ar[*,*,i]=((flat_nw-mbias))-mdark
           rs_fb=sqrt(flat/ccd_gain)+r^2
           flat_er[*,*,i]=rs_fb +(mdark_err/exp_dark)^2
           include[i]=i
