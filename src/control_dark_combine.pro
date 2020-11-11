@@ -159,7 +159,7 @@ endif
       if numext eq 2 then dq=mrdfits(filename,1,hdr,/SILENT) else dq=bytarr(nxyd[1],nxyd[2])
       dark_nw=rejection(dark,threshold,npix)
       if npix lt limit then begin
-        dark_ar[*,*,i]=(dark_nw/ccd_gain)-mbias
+        dark_ar[*,*,i]=(dark_nw)-mbias
         dark_err[*,*,i]= (dark_nw/ccd_gain)+r^2
         include[i]=i
       endif else include[i]=-1
