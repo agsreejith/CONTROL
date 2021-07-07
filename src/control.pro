@@ -17,7 +17,7 @@
 ;
 ; PROCEDURE:
 ;
-;data quality implemented till lc
+;
 ;;#################################################################################################
 
 function dq_seperator,im,bit
@@ -592,7 +592,6 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
     ;message,'CONTROL: No SCIENCE files found. CONTROL will exit now.' 
     ; Logging just as a error, will not cause program to stop.
   endelse
-  
   ;Get list of calibration frames
   caliblist_ind=where((strpos(file_type,'LAMP') ge 0) or $
     (strpos(file_type,'WAVECALIB') ge 0) or (strpos(file_type,'FLUXCALIB') ge 0)) 
@@ -937,13 +936,16 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
       ycut1=SXPAR( hdr, 'YCUT1')
       ycut2=SXPAR( hdr, 'YCUT2')
       ylen=ycut2-ycut1+1
-      ccd_gain=SXPAR( hdr, 'GAIN')
+      ccd_gain=SXPAR( hdr, 'CCDGAIN')
       if ccd_gain le 0 then ccd_gain=1
       r=float(SXPAR( mbias.hdr, 'RNOISE'))
       if nx eq mnx then begin
         if ny eq mny then begin
           raw_imb=(raw_im)-mbias.im
-          sigma_imb=sqrt((raw_im/ccd_gain)+r^2)
+          raw_imbe=(raw_imb/ccd_gain)
+          negative=where(raw_imbe lt 0)
+          raw_imbe[negative]=r^2
+          sigma_imb=sqrt(raw_imbe)
           ;data quality
           dq_imb=dq_im or mb_dq
           logprint,'CONTROL: Bias correction carried out on spectrum('+spectra[i]+').'
@@ -953,7 +955,10 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
           if (ylen ne ny) then mbdq_nw=mb_dq[*,ycut1:ycut1+ny-1] $
           else mbdq_nw=mb_dq[*,ycut1:ycut2]
           raw_imb=(raw_im-mbias_nw)
-          sigma_imb=sqrt(raw_im+r^2)/ccd_gain
+          raw_imbe=(raw_imb/ccd_gain)
+          negative=where(raw_imbe lt 0)
+          raw_imbe[negative]=r^2
+          sigma_imb=sqrt(raw_imbe)
           ;data quality
           dq_imb=dq_im or mbdq_nw
           logprint,'CONTROL: Bias correction carried out on spectrum('+spectra[i]+').'
@@ -1121,7 +1126,7 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
     if n_elements(dq_imbc) eq 1 then dq_imbc=dblarr(bnx,bny)
     if datatype(r,2) eq 0 then r=sqrt(12.25)
     if crb eq 0 then begin
-      ccd_gain=SXPAR( hdr, 'GAIN')
+      ccd_gain=SXPAR( hdr, 'CCDGAIN')
       if ccd_gain le 0 then ccd_gain=1
       raw_imbc=raw_imbc
       sigma_imbc=sqrt((raw_imbc/ccd_gain)+r^2)
@@ -1960,7 +1965,9 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
       Location=[.9, 0.7], Length=0.0, VSpace=3.5, /Box, /Background, BG_Color='white',charsize=2
     ;write_png,inter_path+spectra_name[i]+'_dq.png',TVRD(/TRUE)
     psoff
+    
   endfor
+  stop
   LC_only:
   spectrums=file_search(out_path+'*_1dwf.fits')
   if (science ne 0) then begin

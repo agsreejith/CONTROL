@@ -36,6 +36,7 @@
 
 pro control_flat_combine,flat_list,mflat,mbias_str,mdark_str,type=type,sat_value=sat_value $
                         ,threshold=threshold
+common pp_version                        
 idl_ver=float(!Version.RELEASE)
   if N_params() LT 4 then begin             ;Need at least 3 parameters
     print,'CONTROL_FLAT_COMBINE: Syntax - control_flat_combine,flat_list,mflat,mbias_str,mdark_str
@@ -199,22 +200,26 @@ endif
       filename=flat_list[i]
       flat=mrdfits(filename,0,hdr,/SILENT)
       flat_type=SXPAR(hdr, 'FLATYPE')
-      ccd_gain=SXPAR( hdr, 'GAIN')
+      ccd_gain=SXPAR( hdr, 'CCDGAIN')
       if ccd_gain le 0 then ccd_gain=1
       if (strpos(flat_type,'SKY') ge 0) then begin
         ;steps needed if the flat is an observation of scanned white dwarfs
       endif else begin
         FITS_INFO, filename,N_ext =numext,/SILENT
-        if numext eq 2 then dq=mrdfits(filename,1,hdr,/SILENT) else dq=bytarr(nxy[1],nxy[2])
+        if numext gt 0 then dq=mrdfits(filename,1,hdr1,/SILENT) else dq=bytarr(nxy[1],nxy[2])
         flat_nw=rejection(flat,threshold,npix) ; interpolate pixels that have 5 sigma variations  
         if npix lt limit then begin
-          flat_ar[*,*,i]=((flat_nw-mbias))-mdark
-          rs_fb=sqrt(flat/ccd_gain)+r^2
+          flat_ar[*,*,i]=((flat_nw)-mbias)-mdark
+          fmb=(flat_nw)-mbias
+          rs_fbe = (fmb/ccd_gain))
+          negative=where(rs_fbe lt 0)
+          rs_fbe[negative]=r^2
+          rs_fb=sqrt(rs_fbe)
           flat_er[*,*,i]=rs_fb +(mdark_err/exp_dark)^2
           include[i]=i
         endif else include[i]=-1
       endelse  
-    dq_arr+=dq
+    dq_arr = dq_arr or dq
     endfor
     incl=where(include ge 0)
     n_frames=n_elements(incl)
@@ -310,33 +315,34 @@ endif
    sxaddpar, fhdr, 'TECBTEM ',SXPAR(hdr,'TECBTEM'),'TEC backside temperature'
    sxaddpar, fhdr, 'RADTEMP ',SXPAR(hdr,'RADTEMP'),'Radiator temperature'
    sxaddpar, fhdr, 'SHTRSTS ',SXPAR(hdr,'SHTRSTS'),'Shutter status'
-   sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .',hdr,/COMMENT
+   sxaddpar, fhdr, 'PIPENUM',version,'Pipeline version number used to reduce the data'
+   sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V2.0 .',hdr,/COMMENT
    ;checks flags that have to be checked
-   dq_arr=dq_arr+mbdq+mddq
+   dq_arr=dq_arr or mbdq
+   dq_arr=dq_arr or mddq
    prb=where(dq_arr ge 1)
    flat_dq=bytarr(nxy[1],nxy[2])
-   if total(prb) ne -1 then flat_dq[prb]=1
+   if total(prb) ne -1 then flat_dq[prb]=dq_arr[prb] or 128b
    ;checks
    ;saturated pixels
    
    sat_loc = where(mflat_val ge sat_value)
    if total(sat_loc) ne -1 then sat_flag = 0 else sat_flag = 1
-   if total(sat_loc) ne -1 then flat_dq[sat_loc]=1
+   if total(sat_loc) ne -1 then flat_dq[sat_loc]=flat_dq[sat_loc] or 8b
    ;deviation
    std=stddev(mflat_val)
    std_loc = where((mflat_val ge (mean(mflat_val)+threshold*std)) or $
                   (mflat_val le (mean(mflat_val)-threshold*std)))
    if total(std_loc) ne -1 then std_flag = 0 else std_flag = 1
    npix_stdloc=n_elements(std_loc)
-   if total(std_loc) ne -1 then flat_dq[std_loc]=1
+   if total(std_loc) ne -1 then flat_dq[std_loc]=flat_dq[std_loc] or 8b
    nan_loc = where(finite(mflat_val, /NAN) eq 1)
    if total(nan_loc) eq -1 then nan_flag = 0 else nan_flag = 1
-   if total(nan_loc) ne -1 then flat_dq[nan_loc]=1
+   if total(nan_loc) ne -1 then flat_dq[nan_loc]=flat_dq[nan_loc] or 8b
 
    mflat_flag = sat_flag+std_flag+mbias_flag+nan_flag+mdark_flag
-
    if mflat_flag gt 1 then mflat_flag=1
-   
+ 
    ;update flag headers
    ;sxaddpar, fhdr, 'CRFLG', cr_flag
    sxaddpar, fhdr, 'SRNFLG', sat_flag
