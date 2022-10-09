@@ -66,7 +66,7 @@ endif
   nxy=size(flat_dummy)
   totpix=n_elements(flat_dummy)
   dq_arr=bytarr(nxy[1],nxy[2])
-  limit=0.001*totpix
+  limit=0.01*totpix
   ;read in master bias
   if keyword_defined(mbias_str) then begin
     if (idl_ver ge 8) then begin
@@ -123,7 +123,7 @@ endif
     logprint,'CONTROL_FLAT_COMBINE: Creating a master bias with zero values.'
     mbias=make_array(nxy[1],nxy[2],/DOUBLE,value=0.0)
     mbias_flag = 0
-    r=12.25
+    r=4.5
     mbdq=bytarr(nxy[1],nxy[2])
   endelse
   ;read in master dark
@@ -211,7 +211,7 @@ endif
         if npix lt limit then begin
           flat_ar[*,*,i]=((flat_nw)-mbias)-mdark
           fmb=(flat_nw)-mbias
-          rs_fbe = (fmb/ccd_gain))
+          rs_fbe = (fmb/ccd_gain)
           negative=where(rs_fbe lt 0)
           rs_fbe[negative]=r^2
           rs_fb=sqrt(rs_fbe)
@@ -328,17 +328,17 @@ endif
    
    sat_loc = where(mflat_val ge sat_value)
    if total(sat_loc) ne -1 then sat_flag = 0 else sat_flag = 1
-   if total(sat_loc) ne -1 then flat_dq[sat_loc]=flat_dq[sat_loc] or 8b
+   if total(sat_loc) ne -1 then flat_dq[sat_loc]=flat_dq[sat_loc] or 16b
    ;deviation
    std=stddev(mflat_val)
    std_loc = where((mflat_val ge (mean(mflat_val)+threshold*std)) or $
                   (mflat_val le (mean(mflat_val)-threshold*std)))
    if total(std_loc) ne -1 then std_flag = 0 else std_flag = 1
    npix_stdloc=n_elements(std_loc)
-   if total(std_loc) ne -1 then flat_dq[std_loc]=flat_dq[std_loc] or 8b
+   if total(std_loc) ne -1 then flat_dq[std_loc]=flat_dq[std_loc] or 16b
    nan_loc = where(finite(mflat_val, /NAN) eq 1)
    if total(nan_loc) eq -1 then nan_flag = 0 else nan_flag = 1
-   if total(nan_loc) ne -1 then flat_dq[nan_loc]=flat_dq[nan_loc] or 8b
+   if total(nan_loc) ne -1 then flat_dq[nan_loc]=flat_dq[nan_loc] or 16b
 
    mflat_flag = sat_flag+std_flag+mbias_flag+nan_flag+mdark_flag
    if mflat_flag gt 1 then mflat_flag=1

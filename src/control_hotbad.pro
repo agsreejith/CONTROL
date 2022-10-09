@@ -21,7 +21,7 @@
 ;     map of hot/bad pixel
 ;
 ; PROCEDURE:
-;      Hot and bad pixel corrector for CUTE; 
+;      Hot and bad pixel corrector for CUTE;
 ;
 ;#################################################################################################
 
@@ -63,8 +63,10 @@ pro CONTROL_HOTBAD,input_file,hbmap,out,type
   ycut1=SXPAR( hdr, 'YCUT1')
   ycut2=SXPAR( hdr, 'YCUT2')
   ylen=ycut2-ycut1+1
-  if (ylen ne ny) then hbmap_nw=hbmap[*,ycut1:ycut1+ny-1] else hbmap_nw=hbmap[*,ycut1:ycut2]
-  
+  if (ylen ne ny) then hbmap_nw=hbmap[*,ycut1:ycut1+ny-1] else hbmap_nw=hbmap;[*,ycut1:ycut2]
+  prb=where(hbmap_nw ge 1)
+  hb_dq=bytarr(nx,ylen)
+  if total(prb) ne -1 then hb_dq[prb]= 2b or 128b
   ;Execulte bad pixel removal row wise (removes bad columns as well).
   for i = 0, ny-1 do begin
     bv = where(hbmap_nw[0:nx-1, i] eq 1)
@@ -95,6 +97,6 @@ pro CONTROL_HOTBAD,input_file,hbmap,out,type
     row_data[i,*]=datav
   endfor
 
-  out={data:row_data,header:hdr} 
+  out={data:row_data,dq:hb_dq,header:hdr} 
   return
 end

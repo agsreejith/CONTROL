@@ -27,7 +27,7 @@
 ;##################################################################################################      
 
 pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold=threshold
-  
+  common pp_version
   idl_ver=float(!Version.RELEASE)
   err = ''
   if N_params() LT 2 then begin             ;Need at least 2 parameters
@@ -68,6 +68,9 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
              +' exiting bias combine without creating master bias'
     return
   endif else begin
+    clr=['GRN8','BLU8','ORG8','RED8','PUR8','PBG8','YGB1','RYB1','TG1',$
+      'CG1','CG2','CG3','CG4','CG5','CG6','CG7','CG8','CG9','CG10','CG11','CG12']
+
     gain_val=dblarr(n)
     bias=mrdfits(bias_list[0],0,hdr,/SILENT)
     nxy=size(bias)
@@ -79,20 +82,23 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
     bias_ar=dblarr(nx,ny,n)
     include=intarr(n)
     totpix=n_elements(bias)
-    limit=0.001*totpix     ;Condition that checks for a percentage of bad pixels.
+    limit=0.02*totpix     ;Condition that checks for a percentage of bad pixels.
     
     for i=0, n-1 do begin
       filename=bias_list[i] ;modify based on file structure
       bias=mrdfits(filename,0,hdr,/SILENT)
       FITS_INFO, filename,N_ext =numext,/SILENT
-      if numext eq 2 then dq=mrdfits(filename,1,hdr,/SILENT) else dq=bytarr(nx,ny)
+      if numext gt 0 then dq=mrdfits(filename,1,hdr1,/SILENT) else dq=bytarr(nx,ny)
       bias_nw=rejection(bias,threshold,npix)
       if npix lt limit then begin
         bias_ar[*,*,i]=bias_nw
         gain_val[i]=SXPAR( hdr, 'CCDGAIN')
         include[i]=i
+        ;if i eq 0 then cghistoplot,bias_nw,bin=1,color='black',/nan,xtitle='counts',$
+         ; ytitle='number of pixels',xrange=[0,500] else cghistoplot,bias_nw,bin=1,/oplot,color=clr[i]
       endif else include[i]=-1
-      dq_arr+=dq
+      dq_arr = dq_arr or dq
+       prb=where(dq ge 1)
     endfor
     
     incl=where(include ge 0)
@@ -146,8 +152,7 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
   
     t=SXPAR(hdr,'EXPTIME')
     r_noise=SXPAR(hdr,'RNOISE') 
-    if datatype(r_noise,2) eq 0 then r_noise=12.25
-    
+    if datatype(r_noise,2) eq 0 then r_noise=4.5
     ;Header defnitions
     ;sxaddpar, bihdr, 'Time_in_JD', t
     sxaddpar, bihdr, 'TELESCOP', SXPAR(hdr,'TELESCOP'),'Telescope name'
@@ -157,7 +162,7 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
     sxaddpar, bihdr, 'TARGT_ID', SXPAR(hdr,'TARGT_ID'),'Target ID'
     sxaddpar, bihdr, 'EXP_ID  ', SXPAR(hdr,'EXP_ID'),'Exposure ID'
     sxaddpar, bihdr, 'OBS_ID  ', SXPAR(hdr,'OBS_ID'),'Observation ID'
-     sxaddpar,bihdr, 'FILETYPE', 'MBIAS','Type of observation'
+    sxaddpar,bihdr, 'FILETYPE', 'MBIAS','Type of observation'
     sxaddpar, bihdr, 'RNOISE  ', r_noise, 'Readout noise'
     sxaddpar, bihdr, 'SIGMBIAS',stddev(mbias_val,/NAN), 'Standard deviation of the frame'
     sxaddpar, bihdr, 'MEANBIAS',mean(mbias_val,/NAN), 'Mean value of the frame'
@@ -173,27 +178,29 @@ pro control_bias_combine,bias_list,mbias,type=type,sat_value=sat_value,threshold
     sxaddpar, bihdr, 'TECBTEM ',SXPAR(hdr,'TECBTEM'),'TEC backside temperature'
     sxaddpar, bihdr, 'RADTEMP ',SXPAR(hdr,'RADTEMP'),'Radiator temperature'
     sxaddpar, bihdr, 'SHTRSTS ',SXPAR(hdr,'SHTRSTS'),'Shutter status'
-    sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V1.0 .',hdr,/COMMENT
+    sxaddpar, bihdr, 'PIPENUM',version,'Pipeline version number used to reduce the data'
+    sxaddhist,'File processed with CUTE AUTONOMOUS DATA REDUCTION PIPELINE V2.0 .',hdr,/COMMENT
     ;Necessary checks
     ;Data quality
+    cghistoplot,mbias_val,bin=1,/oplot,color='black'
     prb=where(dq_arr ge 1)
-    bias_dq=bytarr(nx,ny)
-    if total(prb) ne -1 then bias_dq[prb]=1
+    bias_dq=bytarr(nxy[1],nxy[2])
+    if total(prb) ne -1 then bias_dq[prb]=dq_arr[prb] or 128b
     
     ;Saturated pixels
     sat_loc = where(mbias_val ge sat_value)
     if total(sat_loc) eq -1 then sat_flag = 0 else sat_flag = 1
-    if total(sat_loc) ne -1 then bias_dq[sat_loc]=1
+    if total(sat_loc) ne -1 then bias_dq[sat_loc]=bias_dq[sat_loc] or 4b
     
     ;Deviation 
     std=stddev(mbias_val)
     std_loc = where((mbias_val ge (mean(mbias_val)+threshold*std)) or $
                    (mbias_val le (mean(mbias_val)-threshold*std)))
     if total(std_loc) eq -1 then std_flag = 0 else std_flag = 1
-    if total(sat_loc) ne -1 then bias_dq[std_loc]=1
+    if total(std_loc) ne -1 then bias_dq[std_loc]= bias_dq[std_loc] or 4b
     nan_loc = where(finite(mbias_val, /NAN) eq 1)
     if total(nan_loc) eq -1 then nan_flag = 0 else nan_flag = 1
-    if total(nan_loc) ne -1 then bias_dq[nan_loc]=1
+    if total(nan_loc) ne -1 then bias_dq[nan_loc]=bias_dq[nan_loc] or 4b
 
     mbias_flag = sat_flag+std_flag+nan_flag
     if mbias_flag ge 1 then mbias_flag=1

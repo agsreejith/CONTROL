@@ -34,7 +34,7 @@
 
 
 pro control_dark_combine,dark_list,mdark,mbias_str,type=type,sat_value=sat_value $
-                        ,threshold=threshold
+                        ,threshold=threshold,dcosmic=dcosmic
 common pp_version                        
 idl_ver=float(!Version.RELEASE)
   if N_params() LT 3 then begin             ;Need at least 4 parameters
@@ -68,7 +68,7 @@ endif
   nxyd=size(dummy)
   totpix=n_elements(dummy)
   dq_arr=bytarr(nxyd[1],nxyd[2])
-  limit=0.001*totpix
+  limit=0.01*totpix
   ;read in master bias
   if keyword_defined(mbias_str) then begin
     if (idl_ver ge 8) then begin
@@ -120,7 +120,7 @@ endif
           logprint,'CONTROL_DARK_COMBINE: Creating a master bias with zero values.'
           mbias=make_array(nxyd[1],nxyd[2],/DOUBLE,value=0.0)
           mbias_flag = 0
-          r=12.25
+          r=4.5
           mbdq=bytarr(nxyd[1],nxyd[2])
         endelse  
       endif else begin
@@ -143,7 +143,7 @@ endif
     logprint,'CONTROL_DARK_COMBINE: Creating a master bias with zero values.'
     mbias=make_array(nxyd[1],nxyd[2],/DOUBLE,value=0.0)
     mbias_flag = 0
-    r=sqrt(12.25)
+    r=sqrt(20.25)
     mbdq=bytarr(nxyd[1],nxyd[2])
   endelse
   n=n_elements(dark_list)
@@ -154,14 +154,29 @@ endif
     for i=0, n-1 do begin
       filename=dark_list[i]
       dark=mrdfits(filename,0,hdr,/SILENT)
+      filebname=file_basename(filename,'.fits')
       ccd_gain=SXPAR( hdr, 'CCDGAIN')
       if ccd_gain le 0 then ccd_gain=1
       FITS_INFO, filename,N_ext =numext,/SILENT
       if numext gt 0 then dq=mrdfits(filename,1,hdr1,/SILENT) else dq=bytarr(nxyd[1],nxyd[2])
-      dark_nw=rejection(dark,threshold,npix)
+      ;dark_nw=rejection(dark,threshold,npix)
+      npix =0
       if npix lt limit then begin
-        dark_ar[*,*,i]=(dark_nw)-mbias
-        dark_mbe = ((dark_nw-mbias)/ccd_gain)
+        dark_b = (dark)-mbias
+        rawbd_file = inter_path+filebname+'_b.fits'
+        mwrfits,dark_b,rawbd_file,hdr,/create
+        if (dcosmic eq 1) then begin
+          rawbd_file = inter_path+filebname+'_b.fits'
+          mwrfits,dark_b,rawbd_file,hdr,/create
+          darkbc_file = inter_path+filebname+'_bc.fits'
+          darkb_mask  = inter_path+filebname+'_bc_mask.fits'
+          la_cosmic,rawbd_file,outlist=darkbc_file,masklist=darkb_mask,$
+              gain=ccd_gain,readn=r,sigclip=crclip, $
+              sigfrac=0.3,objlim=3,niter=4 ; add other parameters after testing
+              dark_bc=mrdfits(darkbc_file,0,dchdr,/SILENT)  
+              dark_ar[*,*,i]=dark_bc
+        endif else dark_ar[*,*,i]=dark_b
+        dark_mbe = ((dark-mbias)/ccd_gain)
         negative=where(dark_mbe lt 0)
         dark_mbe[negative]=r^2
         dark_err[*,*,i]= dark_mbe
@@ -266,17 +281,17 @@ endif
     
     sat_loc = where(mdark_val ge sat_value)
     if total(sat_loc) eq -1 then sat_flag = 0 else sat_flag = 1
-    if total(sat_loc) ne -1 then dark_dq[sat_loc]=dark_dq[sat_loc] or 4b
+    if total(sat_loc) ne -1 then dark_dq[sat_loc]=dark_dq[sat_loc] or 8b
     ;deviation
     std=stddev(mdark_val)
     std_loc = where((mdark_val ge (mean(mdark_val)+threshold*std)) or $
                    (mdark_val le (mean(mdark_val)-threshold*std)))
     if total(std_loc) eq -1 then std_flag = 0 else std_flag = 1
-    if total(std_loc) ne -1 then dark_dq[std_loc]= dark_dq[std_loc] or 4b
+    if total(std_loc) ne -1 then dark_dq[std_loc]= dark_dq[std_loc] or 8b
     
     nan_loc = where(finite(mdark_val, /NAN) eq 1)
     if total(nan_loc) eq -1 then nan_flag = 0 else nan_flag = 1
-    if total(nan_loc) ne -1 then dark_dq[nan_loc]=1
+    if total(nan_loc) ne -1 then dark_dq[nan_loc]= dark_dq[nan_loc] or 8b
 
     mdark_flag = sat_flag+std_flag+mbias_flag+nan_flag
     if mdark_flag gt 1 then mdark_flag=1
