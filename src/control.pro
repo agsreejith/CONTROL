@@ -893,7 +893,7 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
       goto,code_end
     endif
     logprint,'Creating master bias of zeros (2048x512) and assuming readout noise to be 12.25'
-    sxaddpar,mbhdr,'RNOISE',3.6,'Read out noise'
+    sxaddpar,mbhdr,'RNOISE',4.5,'Read out noise'
     mbias={im:dblarr(2048,512),error:dblarr(2048,512),hdr:mbhdr,dq:bytarr(2048,512)}
     mb_dq=bytarr(2048,512)
 
@@ -922,6 +922,7 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
     endif
   endif
   ylen=ycut2-ycut1+1
+  ;rv=[3,3.5,4,4.5,5,5.5,6]
   if (crb) then begin
     for i=0,n_elements(spectra)-1 do begin
       raw_im=mrdfits(spectra[i],0,hdr,/SILENT)
@@ -961,13 +962,15 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
       ccd_gain=SXPAR( hdr, 'CCDGAIN')
       if ccd_gain le 0 then ccd_gain=1
       r=float(SXPAR( mbias.hdr, 'RNOISE'))
+      ;r=rv[i]
       if nx eq mnx then begin
         if ny eq mny then begin
           raw_imb=(raw_im)-mbias.im
           raw_imbe=(raw_imb/ccd_gain)
           negative=where(raw_imbe lt 0)
-          raw_imbe[negative]=r^2
-          sigma_imb=sqrt(raw_imbe)
+          raw_imbe[negative]=0
+          sigma_imb=sqrt(raw_imbe+r^2)
+          ;sigma_imb[negative]
           ;data quality
           dq_imb=dq_im or mb_dq
           logprint,'CONTROL: Bias correction carried out on spectrum('+spectra[i]+').'
@@ -979,8 +982,8 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
           raw_imb=(raw_im-mbias_nw)
           raw_imbe=(raw_imb/ccd_gain)
           negative=where(raw_imbe lt 0)
-          raw_imbe[negative]=r^2
-          sigma_imb=sqrt(raw_imbe)
+          raw_imbe[negative]=0
+          sigma_imb=sqrt(raw_imbe+r^2)
           ;data quality
           dq_imb=dq_im or mbdq_nw
           logprint,'CONTROL: Bias correction carried out on spectrum('+spectra[i]+').'
@@ -994,7 +997,6 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
       if total(prb) ne -1 then dq_imb[prb]= dq_imb[prb] or 128b
       nbad=double(n_elements(prb))
       dqfactr=double(nbad/n_elements(dq_imb))
-      
       ;headers
       sxaddpar, hdr, 'BCFLG', 1,'BIAS CORRECTION FLAG' ;bias correction flag
       sxaddpar, hdr, 'SIGMBIAS', SXPAR(mbias.hdr,'SIGMBIAS'), $
@@ -2034,6 +2036,7 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
     imxy=size(raw_imbdft)
     imx=imxy[1]
     imy=imxy[2]
+    dq_psym=[15,16,45,46,14,6,9]
     cgimage,raw_imbdft,imx,imy,/AXES,/Save,xtitle='X pixels',ytitle='Y pixels', $
       charsize=2,CTINDEX=0,/REVERSE,position=[0.05, 0.13, 0.89, 0.89]
     if datatype(sp_wavelength,2) ne 0 then cgAxis, XAxis=1,xtitle=' Wavelength [$\Angstrom$]',$
@@ -2041,11 +2044,11 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
         sp_wavelength[n_elements(sp_wavelength)-1]],xstyle=1
     for bit=0,6 do begin
       dq_pos=dq_seperator(dq_imbdft,bit)
-      if total(dq_pos) ne -1 then cgoplot,dq_pos[*,0],dq_pos[*,1],psym=15,$
+      if total(dq_pos) ne -1 then cgoplot,dq_pos[*,0],dq_pos[*,1],psym=dq_psym[bit],$
         color=dq_colour[bit],symsize=1
     endfor
     cgLegend, Title=['Missing pixels','Hot/Bad pixel', 'Master bias', 'Master dark','Master flat',$
-      'Saturation','Cosmic ray'], PSym=[15,15,15,15,15,15,15], $
+      'Saturation','Cosmic ray'], PSym=[15,16,45,46,14,6,9], $
       SymSize=2, Color=['red', 'blue', 'dark green','magenta','yellow','brown','purple'], $
       Location=[.9, 0.7], Length=0.0, VSpace=3.5, /Box, /Background, BG_Color='white',charsize=2
     write_png,inter_path+spectra_name[i]+'_dq.png',TVRD(/TRUE)
@@ -2155,33 +2158,33 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
       ln=dindgen(n_elements(lightcurve.time))
       new_ln=dindgen(n_elements(lightcurve.time)+4-remind)
       new_time = interpol(lightcurve.time,ln,new_ln)
-      new_lcf  = interpol(lightcurve.full_data,ln,new_ln)
-      new_lcs  = interpol(lightcurve.short_data,ln,new_ln)
-      new_lcm  = interpol(lightcurve.middle_data,ln,new_ln)
-      new_lcl  = interpol(lightcurve.long_data,ln,new_ln)
-      new_lcf_unc = lightcurve.full_error[0:n_elements(lightcurve.time)-1]
-      new_lcs_unc = lightcurve.short_error[0:n_elements(lightcurve.time)-1]
-      new_lcm_unc = lightcurve.middle_error[0:n_elements(lightcurve.time)-1]
-      new_lcl_unc = lightcurve.long_error[0:n_elements(lightcurve.time)-1]
+      new_lcf  = interpol(lightcurve.white_lc,ln,new_ln)
+      new_lcs  = interpol(lightcurve.blue_lc,ln,new_ln)
+      new_lcm  = interpol(lightcurve.middle_lc,ln,new_ln)
+      new_lcl  = interpol(lightcurve.red_lc,ln,new_ln)
+      new_lcf_unc = lightcurve.white_lc_error[0:n_elements(lightcurve.time)-1]
+      new_lcs_unc = lightcurve.blue_lc_error[0:n_elements(lightcurve.time)-1]
+      new_lcm_unc = lightcurve.middle_lc_error[0:n_elements(lightcurve.time)-1]
+      new_lcl_unc = lightcurve.red_lc_error[0:n_elements(lightcurve.time)-1]
       for j=0,4-remind-1 do begin
-        new_lcf_unc = [new_lcf_unc,lightcurve.full_error[n_elements(lightcurve.time)-1]]
-        new_lcs_unc = [new_lcs_unc,lightcurve.short_error[n_elements(lightcurve.time)-1]]
-        new_lcm_unc = [new_lcm_unc,lightcurve.middle_error[n_elements(lightcurve.time)-1]]
-        new_lcl_unc = [new_lcl_unc,lightcurve.long_error[n_elements(lightcurve.time)-1]]
+        new_lcf_unc = [new_lcf_unc,lightcurve.white_lc_error[n_elements(lightcurve.time)-1]]
+        new_lcs_unc = [new_lcs_unc,lightcurve.blue_lc_error[n_elements(lightcurve.time)-1]]
+        new_lcm_unc = [new_lcm_unc,lightcurve.middle_lc_error[n_elements(lightcurve.time)-1]]
+        new_lcl_unc = [new_lcl_unc,lightcurve.red_lc_error[n_elements(lightcurve.time)-1]]
       endfor
 
     endif else begin
       n_bins = n_bins
       lngth  = n_elements(lightcurve.time)-remind-1
       new_time = lightcurve.time[0:lngth]
-      new_lcf = lightcurve.full_data[0:lngth]
-      new_lcs = lightcurve.short_data[0:lngth]
-      new_lcm = lightcurve.middle_data[0:lngth]
-      new_lcl = lightcurve.long_data[0:lngth]
-      new_lcf_unc = lightcurve.full_error[0:lngth]
-      new_lcs_unc = lightcurve.short_error[0:lngth]
-      new_lcm_unc = lightcurve.middle_error[0:lngth]
-      new_lcl_unc = lightcurve.long_error[0:lngth]
+      new_lcf = lightcurve.white_lc[0:lngth]
+      new_lcs = lightcurve.blue_lc[0:lngth]
+      new_lcm = lightcurve.middle_lc[0:lngth]
+      new_lcl = lightcurve.red_lc[0:lngth]
+      new_lcf_unc = lightcurve.white_lc_error[0:lngth]
+      new_lcs_unc = lightcurve.blue_lc_error[0:lngth]
+      new_lcm_unc = lightcurve.middle_lc_error[0:lngth]
+      new_lcl_unc = lightcurve.red_lc_error[0:lngth]
     endelse
     k=0
     bin_time= dblarr(fix(n_elements(new_time)/4))
