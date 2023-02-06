@@ -1537,58 +1537,6 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
       logprint,'CONTROL: Spectrum('+spectra_name[i]+') is extracted.'
     endif ;else begin
     extr_read:
-    ;im_bflg=fix(SXPAR(hdr, 'BCFLG',MISSING=-1))
-    ;im_dflg=fix(SXPAR(hdr, 'DCFLG',MISSING=-1))
-    ;im_fflg=fix(SXPAR(hdr, 'FCFLG',MISSING=-1))
-    ;if (im_bflg eq -1 or im_dflg eq -1 or im_fflg eq -1) then begin
-    ;  logprint,'CONTROL: The spectra is not bias or dark or flat corrected with CONTROL.'
-    ;        logprint,'Press q to skip the extraction for current spectrum. 
-    ;        logprint,'Press any key to continue assuming the spectrum is corrected.'
-    ;        R = GET_KBRD()
-    ;        if R eq 'q' then begin
-    ;          logprint,'CONTROL: Skipping the extraction for current spectrum as '$
-    ;                  +'requested by the user.'
-    ;          goto,spectrum_loop_end
-    ;        endif
-    ;      endif
-    ;      spectrum=mrdfits(rawbc_list[i],1,hdr_nw)
-    ;
-    ;      if(tag_exist(spectrum,'data') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find data in FITS file specified.'$
-    ;                +' Pipeline procedures for this file is aborted'
-    ;        goto,spectrum_loop_end
-    ;      endif
-    ;      if(tag_exist(spectrum,'error') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find error in FITS file specified.'$
-    ;                +' Assuming it to be zero'
-    ;        sp_error=dblarr(n_elements(spectrum.data))
-    ;        struct_add_field, spectrum, 'error', sp_error, after='data'
-    ;      endif
-    ;      if(tag_exist(spectrum,'dq') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find Data quality in FITS file specified.'$
-    ;                +' Assuming data to be good'
-    ;        sp_dq=bytarr(n_elements(spectrum.data))
-    ;        struct_add_field, spectrum, 'dq', sp_dq, after='error'
-    ;      endif
-    ;      if(tag_exist(spectrum,'background') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find background in FITS file specified.'$
-    ;                +' Assuming it to be zero'
-    ;        sp_background=dblarr(n_elements(spectrum.data))
-    ;        struct_add_field, spectrum, 'background', sp_background, after='dq'
-    ;      endif
-    ;      if(tag_exist(spectrum,'bck_error') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find background error in FITS file specified.'$
-    ;                +' Assuming it to be zero'
-    ;        sp_backgroundr=dblarr(n_elements(spectrum.data))
-    ;        struct_add_field, spectrum, 'bck_error', sp_backgroundr, after='background'
-    ;      endif
-    ;      if(tag_exist(spectrum,'dq_bg') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find Data qualiy for background in FITS file specified.'$
-    ;                +' Assuming it be all good'
-    ;        sp_back_dq=dblarr(n_elements(spectrum.data))
-    ;        struct_add_field, spectrum, 'dq_bg', sp_back_dq, after='bck_error'
-    ;      endif
-    ;    endelse
     if (bgs) then begin
       logprint,'CONTROL will carryout background substraction on extracted spectrum now'
       if (idl_ver ge 8) then begin
@@ -1726,45 +1674,6 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
         hdr_1d =hdr_nw
       endif  
     endelse
-    ;      im_bflg=fix(SXPAR(hdr_nw, 'BCFLG',MISSING=-1))
-    ;      im_dflg=fix(SXPAR(hdr_nw, 'DCFLG',MISSING=-1))
-    ;      im_fflg=fix(SXPAR(hdr_nw, 'FCFLG',MISSING=-1))
-    ;      im_eflg=fix(SXPAR(hdr_nw, 'EXTFLF',MISSING=-1))
-    ;      if (im_bflg eq -1 or im_dflg eq -1 or im_fflg eq -1 or im_eflg eq -1) then begin
-    ;        logprint,'CONTROL: The spectra('+rawbc_list[i]+') is not bias or dark or flat'$
-    ;                +'corrected or extracted with CONTROL.'
-    ;        logprint,'Press q to skip the background subtraction for current spectrum ('$
-    ;        +rawbc_list[i]+'). Press any key to continue background correction for the spectrum.'
-    ;        R = GET_KBRD()
-    ;        if R eq 'q' then begin
-    ;          logprint,'CONTROL: Skipping the background subtraction for current spectrum as'$
-    ;                  +'requested by the user.'
-    ;          goto,spectrum_loop_end
-    ;        endif
-    ;      endif
-    ;      if(tag_exist(spectrum,'data') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find data in FITS file specified.'$
-    ;                +' Pipeline procedures for this file is aborted'
-    ;        goto,spectrum_loop_end
-    ;      endif else spectra_1d=spectrum.data
-    ;      if(tag_exist(spectrum,'error') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find error in FITS file specified.'$
-    ;                +' Pipeline procedures for this file is aborted'
-    ;        goto,spectrum_loop_end
-    ;      endif else error_1d=spectrum.error
-    ;      if(tag_exist(spectrum,'dq') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find Data quality in FITS file specified.'$
-    ;                +' Assuming data to be good'
-    ;        sp_dq=bytarr(n_elements(spectrum.data))
-    ;        struct_add_field, spectrum, 'dq', sp_dq, after='error'
-    ;      endif else dq_1d=spectrum.dq
-    ;      bgflg=0
-    ;    endelse
-    ;    spectrum_file={data:spectra_1d,error:error_1d,dq:dq_1d}
-    ;    sxaddpar, hdr_nw, 'BGFLG', bgflg ,'BACKGROUND CORRECTION FLAG'
-    ;    if(tag_exist(spectrum,'wave') eq 1) then begin
-    ;      struct_add_field, spectrum_file, 'wave', spectrum.wave, before='data'
-    ;    endif
     ;wavelength calibration
     if (wcl) then begin
       logprint,'CONTROL will wavelength calibrate the 1D science spectrum now'
@@ -1907,30 +1816,7 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
       spectra_1dw  = sp_data
       error_1dw    = sp_error
       dq_1dw       = sp_dq
-    endif ;else begin
-    ;      spectrum_wl=mrdfits(rawbc_list[i],1,wl_hdr)
-    ;      if(tag_exist(spectrum_wl,'wave') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find wavelength information in FITS file specified.'$
-    ;                +'Pipeline procedures for this file is aborted'
-    ;        goto,spectrum_loop_end
-    ;      endif else sp_wavelength=spectrum_wl.wave
-    ;      if(tag_exist(spectrum_wl,'counts') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find count information in FITS file specified.'$
-    ;                +' Pipeline procedures for this file is aborted'
-    ;        goto,spectrum_loop_end
-    ;      endif else spectra_1dw=spectrum_wl.counts
-    ;      if(tag_exist(spectrum_wl,'error') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find error information in FITS file specified.'$
-    ;                +' Pipeline procedures for this file is aborted'
-    ;        goto,spectrum_loop_end
-    ;      endif else error_1dw=spectrum_wl.error
-    ;      if(tag_exist(spectrum_wl,'dq') eq 0) then begin
-    ;        logprint,'CONTROL: Could not find Data quality information in FITS file specified.'$
-    ;                +' Pipeline procedures for this file is aborted'
-    ;        goto,spectrum_loop_end
-    ;      endif else dq_1dw=spectrum_wl.dq
-    ;
-    ;    endelse
+    endif 
     ;flux calibration
     if (fcl) then begin
       logprint,'CONTROL will flux calibrate the wavelength calibrated 1D science spectrum now'
