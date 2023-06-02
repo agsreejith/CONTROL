@@ -1792,11 +1792,11 @@ pro control,parfile=parfile,help=help,default=default,width=width,bkg_loc=bkg_lo
       sxaddpar, wl_hdr,'TDISP2  ','G10.4','Display format for column 1'
       sxaddpar, wl_hdr,'TNULL1  ',-999,'Undefined value for column 1'
       fxbaddcol,2,wl_hdr,sp_data[0],'flux'             ;to determine column properties
-      sxaddpar, wl_hdr,'TUNIT2  ','erg/s/cm**2/Angstrom','Physical unit of column 2'
+      sxaddpar, wl_hdr,'TUNIT2  ','counts','Physical unit of column 2'
       sxaddpar, wl_hdr,'TDISP2  ','G10.4','Display format for column 2'
       sxaddpar, wl_hdr,'TNULL2  ',-999,'Undefined value for column 2'
       fxbaddcol,3,wl_hdr,sp_error[0],'error'
-      sxaddpar, wl_hdr,'TUNIT3  ','erg/s/cm**2/Angstrom','Physical unit of column 3'
+      sxaddpar, wl_hdr,'TUNIT3  ','counts','Physical unit of column 3'
       sxaddpar, wl_hdr,'TDISP3  ','G10.4','Display format for column 3'
       sxaddpar, wl_hdr,'TNULL3  ',-999,'Undefined value for column 3'
       fxbaddcol,4,wl_hdr,sp_dq[0],'dq'
